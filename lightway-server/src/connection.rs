@@ -38,7 +38,7 @@ impl ConnectionTickerState for ConnectionState {
 
 pub(crate) struct Connection {
     manager: Arc<ConnectionManager>,
-    lw_conn: Mutex<lightway_core::Connection<ConnectionState>>,
+    lw_conn: Arc<Mutex<lightway_core::Connection<ConnectionState>>>,
     pub(crate) connection_started: std::time::Instant,
 }
 
@@ -69,11 +69,9 @@ impl Connection {
             conn: std::cell::OnceCell::new(),
         };
 
-        let lw_conn = Mutex::new(
-            ctx.start_accept(protocol_version, outside_io)?
-                .with_event_cb(Box::new(event_cb))
-                .accept(state)?,
-        );
+        let lw_conn = ctx.start_accept(protocol_version, outside_io)?
+            .with_event_cb(Box::new(event_cb))
+            .accept(state)?;
 
         let conn = Arc::new(Self {
             manager,

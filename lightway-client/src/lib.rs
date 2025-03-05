@@ -462,7 +462,7 @@ pub async fn client<A: 'static + Send + EventCallback>(
         b.with_key_logger(WiresharkKeyLogger::new(k))
     });
 
-    let conn = Arc::new(Mutex::new(conn_builder.connect(state)?));
+    let conn = conn_builder.connect(state)?;
 
     let (keepalive, keepalive_task) = Keepalive::new(
         keepalive::Config {

@@ -1,4 +1,5 @@
-use std::{num::NonZeroU16, sync::Arc};
+use std::num::NonZeroU16;
+use std::sync::{Arc, Mutex};
 
 use bytes::{Bytes, BytesMut};
 use rand::Rng;
@@ -211,7 +212,9 @@ impl<AppState: Send + 'static> ClientConnectionBuilder<AppState> {
     }
 
     /// Finalize the builder to create a [`Connection`] and begin the connection process.
-    pub fn connect(self, app_state: AppState) -> ConnectionBuilderResult<Connection<AppState>> {
+    pub fn connect(self, app_state: AppState)
+        -> ConnectionBuilderResult<Arc<Mutex<Connection<AppState>>>>
+    {
         let auth_method = self
             .auth_method
             .ok_or(ConnectionBuilderError::AuthRequired)?;
@@ -231,7 +234,7 @@ impl<AppState: Send + 'static> ClientConnectionBuilder<AppState> {
 
         tracing::info!(inside_mtu, "New Connection");
 
-        Ok(Connection::new(NewConnectionArgs {
+        Ok(Arc::new(Mutex::new(Connection::new(NewConnectionArgs {
             app_state,
             connection_type: self.connection_type,
             protocol_version: Version::MAXIMUM,
@@ -249,7 +252,7 @@ impl<AppState: Send + 'static> ClientConnectionBuilder<AppState> {
             outside_plugins: self.outside_plugins,
             max_fragment_map_entries: self.max_fragment_map_entries,
             pmtud_timer: self.pmtud_timer,
-        })?)
+        })?)))
     }
 }
 
@@ -337,7 +340,9 @@ impl<'a, AppState: Send + 'static> ServerConnectionBuilder<'a, AppState> {
     }
 
     /// Finalize the builder to accept [`Connection`] and begin the connection process.
-    pub fn accept(self, app_state: AppState) -> ConnectionBuilderResult<Connection<AppState>> {
+    pub fn accept(self, app_state: AppState)
+        -> ConnectionBuilderResult<Arc<Mutex<Connection<AppState>>>>
+    {
         if !self.ctx.is_supported_version(self.protocol_version) {
             return Err(ConnectionBuilderError::UnsupportedProtocolVersion(
                 self.protocol_version,
@@ -346,7 +351,7 @@ impl<'a, AppState: Send + 'static> ServerConnectionBuilder<'a, AppState> {
 
         let session = self.ctx.wolfssl.new_session(self.session_config)?;
 
-        Ok(Connection::new(NewConnectionArgs {
+        Ok(Arc::new(Mutex::new(Connection::new(NewConnectionArgs {
             app_state,
             connection_type: self.connection_type,
             protocol_version: self.protocol_version,
@@ -368,7 +373,7 @@ impl<'a, AppState: Send + 'static> ServerConnectionBuilder<'a, AppState> {
             outside_plugins: self.outside_plugins,
             max_fragment_map_entries: self.max_fragment_map_entries,
             pmtud_timer: None,
-        })?)
+        })?)))
     }
 }
 
