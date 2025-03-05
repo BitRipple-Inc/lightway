@@ -74,16 +74,6 @@ impl Tun {
     }
 }
 
-impl AsRawFd for Tun {
-    fn as_raw_fd(&self) -> RawFd {
-        match self {
-            Tun::Direct(t) => t.as_raw_fd(),
-            #[cfg(feature = "io-uring")]
-            Tun::IoUring(t) => t.as_raw_fd(),
-        }
-    }
-}
-
 /// Tun struct
 pub struct TunDirect {
     tun: TokioTun,

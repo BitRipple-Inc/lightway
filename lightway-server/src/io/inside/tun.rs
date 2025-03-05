@@ -11,7 +11,6 @@ use lightway_app_utils::{Tun as AppUtilsTun, TunConfig};
 use lightway_core::{
     IOCallbackResult, InsideIOSendCallback, InsideIOSendCallbackArg, ipv4_update_source,
 };
-use std::os::fd::{AsRawFd, RawFd};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -26,12 +25,6 @@ impl Tun {
             None => AppUtilsTun::direct(tun).await?,
         };
         Ok(Tun(tun))
-    }
-}
-
-impl AsRawFd for Tun {
-    fn as_raw_fd(&self) -> RawFd {
-        self.0.as_raw_fd()
     }
 }
 
