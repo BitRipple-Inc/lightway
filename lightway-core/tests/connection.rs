@@ -1,6 +1,6 @@
 use std::{
     net::SocketAddr,
-    sync::{Arc, Mutex},
+    sync::Arc,
 };
 
 use async_trait::async_trait;
@@ -200,13 +200,11 @@ async fn server<S: TestSock>(sock: Arc<S>, pqc: PQCrypto) {
     .unwrap();
 
     let (ticker, ticker_task) = ConnectionTicker::new();
-    let conn = Arc::new(Mutex::new(
-        server_ctx
-            .start_accept(Version::MAXIMUM, sock.clone().into_io_send_callback())
+    let conn = server_ctx
+            .start_accept(Version::MAXIMUM, sock.clone().into_io_send_callback(), None)
             .unwrap()
             .accept(ticker)
-            .unwrap(),
-    ));
+            .unwrap();
 
     let mut join_set = JoinSet::new();
 
@@ -311,7 +309,7 @@ async fn client<S: TestSock>(
         .with_schedule_tick_cb(connection_ticker_cb)
         .when_some(cipher, |b, cipher| b.with_cipher(cipher).unwrap())
         .build()
-        .start_connect(sock.clone().into_io_send_callback(), MAX_OUTSIDE_MTU)
+        .start_connect(sock.clone().into_io_send_callback(), MAX_OUTSIDE_MTU, None)
         .unwrap()
         .with_auth_token("LET ME IN")
         .with_event_cb(Box::new(event_cb))
@@ -321,7 +319,6 @@ async fn client<S: TestSock>(
         })
         .connect(ticker)
         .unwrap();
-    let client = Arc::new(Mutex::new(client));
 
     ticker_task.spawn(Arc::downgrade(&client), &mut join_set);
 

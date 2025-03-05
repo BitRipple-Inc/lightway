@@ -67,6 +67,7 @@ pub struct ClientConnectionBuilder<AppState> {
     max_fragment_map_entries: NonZeroU16,
     pmtud_timer: Option<dplpmtud::TimerArg<AppState>>,
     outside_plugins: Arc<PluginList>,
+    generic_proc_cmd: Option<Vec<String>>,
 }
 
 impl<AppState: 'static + Sync + Send> ClientConnectionBuilder<AppState> {
@@ -75,6 +76,7 @@ impl<AppState: 'static + Sync + Send> ClientConnectionBuilder<AppState> {
         ctx: ClientContext<AppState>,
         outside_io: OutsideIOSendCallbackArg,
         outside_mtu: usize,
+        generic_proc_cmd: Option<Vec<String>>,
     ) -> ConnectionBuilderResult<Self> {
         if !(MIN_OUTSIDE_MTU..=MAX_OUTSIDE_MTU).contains(&outside_mtu) {
             return Err(ConnectionBuilderError::UnsupportedOutsideMtu(outside_mtu));
@@ -111,6 +113,7 @@ impl<AppState: 'static + Sync + Send> ClientConnectionBuilder<AppState> {
             max_fragment_map_entries: FragmentMap::DEFAULT_MAX_ENTRIES,
             pmtud_timer: None,
             outside_plugins,
+            generic_proc_cmd,
         })
     }
 
@@ -234,7 +237,7 @@ impl<AppState: 'static + Sync + Send> ClientConnectionBuilder<AppState> {
 
         tracing::info!(inside_mtu, "New Connection");
 
-        Ok(Arc::new(Mutex::new(Connection::new(NewConnectionArgs {
+        Ok(Connection::new_mutex(NewConnectionArgs {
             app_state,
             connection_type: self.connection_type,
             protocol_version: Version::MAXIMUM,
@@ -252,7 +255,8 @@ impl<AppState: 'static + Sync + Send> ClientConnectionBuilder<AppState> {
             outside_plugins: self.outside_plugins,
             max_fragment_map_entries: self.max_fragment_map_entries,
             pmtud_timer: self.pmtud_timer,
-        })?)))
+            generic_proc_cmd: self.generic_proc_cmd,
+        })?)
     }
 }
 
@@ -272,6 +276,7 @@ pub struct ServerConnectionBuilder<'a, AppState> {
     event_cb: Option<EventCallbackArg>,
     max_fragment_map_entries: NonZeroU16,
     outside_plugins: Arc<PluginList>,
+    generic_proc_cmd: Option<Vec<String>>,
 }
 
 impl<'a, AppState: 'static + Sync + Send> ServerConnectionBuilder<'a, AppState> {
@@ -280,6 +285,7 @@ impl<'a, AppState: 'static + Sync + Send> ServerConnectionBuilder<'a, AppState> 
         ctx: &'a ServerContext<AppState>,
         protocol_version: Version,
         outside_io: OutsideIOSendCallbackArg,
+        generic_proc_cmd: Option<Vec<String>>,
     ) -> ConnectionBuilderResult<Self> {
         let connection_type = ctx.connection_type;
         let auth = ctx.auth.clone();
@@ -320,6 +326,7 @@ impl<'a, AppState: 'static + Sync + Send> ServerConnectionBuilder<'a, AppState> 
             event_cb: None,
             max_fragment_map_entries: FragmentMap::DEFAULT_MAX_ENTRIES,
             outside_plugins,
+            generic_proc_cmd,
         })
     }
 
@@ -351,7 +358,7 @@ impl<'a, AppState: 'static + Sync + Send> ServerConnectionBuilder<'a, AppState> 
 
         let session = self.ctx.wolfssl.new_session(self.session_config)?;
 
-        Ok(Arc::new(Mutex::new(Connection::new(NewConnectionArgs {
+        Ok(Connection::new_mutex(NewConnectionArgs {
             app_state,
             connection_type: self.connection_type,
             protocol_version: self.protocol_version,
@@ -373,7 +380,8 @@ impl<'a, AppState: 'static + Sync + Send> ServerConnectionBuilder<'a, AppState> 
             outside_plugins: self.outside_plugins,
             max_fragment_map_entries: self.max_fragment_map_entries,
             pmtud_timer: None,
-        })?)))
+	        generic_proc_cmd: self.generic_proc_cmd,
+        })?)
     }
 }
 

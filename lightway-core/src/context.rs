@@ -113,8 +113,12 @@ impl<AppState: 'static + Sync + Send> ClientContext<AppState> {
         self,
         outside_io: OutsideIOSendCallbackArg,
         outside_mtu: usize,
+        generic_proc_cmd: Option<Vec<String>>,
     ) -> Result<ClientConnectionBuilder<AppState>, ContextError> {
-        Ok(ClientConnectionBuilder::new(self, outside_io, outside_mtu)?)
+        Ok(ClientConnectionBuilder::new(self,
+            outside_io,
+            outside_mtu,
+            generic_proc_cmd)?)
     }
 }
 
@@ -288,11 +292,13 @@ impl<AppState: 'static + Sync + Send> ServerContext<AppState> {
         &self,
         protocol_version: Version,
         outside_io: OutsideIOSendCallbackArg,
+        generic_proc_cmd: Option<Vec<String>>,
     ) -> Result<ServerConnectionBuilder<AppState>, ContextError> {
         Ok(ServerConnectionBuilder::new(
             self,
             protocol_version,
             outside_io,
+            generic_proc_cmd
         )?)
     }
 }

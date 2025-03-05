@@ -6,13 +6,24 @@ mod io_adapter;
 mod key_update;
 
 use bytes::{Bytes, BytesMut};
+use nix::errno::Errno;
+use nix::fcntl::{fcntl, FcntlArg, FdFlag};
+use nix::unistd::{pipe};
+use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
+use nix::sys::socket::{setsockopt, sockopt};
 use rand::Rng;
 use std::borrow::Cow;
-use std::net::AddrParseError;
+use std::net::{AddrParseError, Shutdown};
 use std::num::{NonZeroU16, Wrapping};
+use std::fs::File;
 use std::{
+    io,
     net::SocketAddr,
+    process,
+    os::unix::io::{AsFd, AsRawFd, RawFd},
+    os::unix::net::{UnixDatagram},
     sync::{Arc, Mutex},
+    thread,
     time::{Duration, Instant},
 };
 use thiserror::Error;
@@ -260,6 +271,31 @@ pub struct ConnectionActivity {
 /// The result of an operation on a [`Connection`].
 pub type ConnectionResult<T> = Result<T, ConnectionError>;
 
+/// Used e.g. for the BitRipple plug in.
+struct GenericInsideProcessor {
+
+    /// File descriptor for inside data (to/from tun interface)
+    inside_fd: UnixDatagram,
+
+    /// File descriptor for outside data (to/from tunnel socket)
+    outside_fd: UnixDatagram,
+
+    /// Control pipe, write end.
+    _control_pipe: File,
+
+    //worker: thread::JoinHandle<()>,
+}
+
+impl Drop for GenericInsideProcessor {
+    fn drop(&mut self) {
+        // Tell the worker threads to shut down
+        self.inside_fd.shutdown(Shutdown::Both)
+            .expect("Failed to shutdown inside_fd");
+        self.outside_fd.shutdown(Shutdown::Both)
+            .expect("Failed to shutdown outside_fd");
+    }
+}
+
 /// A lightway connection
 pub struct Connection<AppState: Send = ()> {
     /// Type of connection
@@ -344,6 +380,9 @@ pub struct Connection<AppState: Send = ()> {
 
     // Is the first outside packet received
     is_first_packet_received: bool,
+
+    /// Generic processing chain such as e.g. BitRipple.
+    inside_processor: Option<GenericInsideProcessor>,
 }
 
 /// Information about the new session being established with a new
@@ -363,11 +402,203 @@ struct NewConnectionArgs<AppState> {
     outside_plugins: Arc<PluginList>,
     max_fragment_map_entries: NonZeroU16,
     pmtud_timer: Option<dplpmtud::TimerArg<AppState>>,
+    generic_proc_cmd: Option<Vec<String>>,
+}
+
+/// Set or clear the FD_CLOEXEC flag on a file descriptor
+fn set_cloexec(fd: RawFd, enable: bool) -> nix::Result<()> {
+    let flags = fcntl(fd, FcntlArg::F_GETFD)?;
+    let new_flags = if enable {
+        FdFlag::from_bits_truncate(flags) | FdFlag::FD_CLOEXEC
+    } else {
+        FdFlag::from_bits_truncate(flags) & !FdFlag::FD_CLOEXEC
+    };
+    fcntl(fd, FcntlArg::F_SETFD(new_flags))?;
+
+    Ok(())
+}
+
+fn make_inside_processor<AppState: 'static + Sync + Send>(
+    conn: &Arc<Mutex<Connection<AppState>>>,
+    cmd: &Option<Vec<String>>,
+    ) -> Option<GenericInsideProcessor>
+{
+    match cmd {
+        &None => None,
+        &Some(ref cmd) => {
+            // Create the control pipe
+            let (pipe_read, pipe_write) = pipe()
+                .expect("Failed to create control pipe");
+            set_cloexec(pipe_read.as_raw_fd(), false)
+                .expect("Failed to clear FD_CLOEXEC on control pipe");
+            set_cloexec(pipe_write.as_raw_fd(), true)
+                .expect("Failed to set FD_CLOEXEC on control pipe");
+
+            // Create the sockets
+            let (inside_fd_own, inside_fd_other) = UnixDatagram::pair()
+                .expect("Can't create socket pair for inside");
+            let (outside_fd_own, outside_fd_other) = UnixDatagram::pair()
+                .expect("Can't create socket pair for outside");
+            set_cloexec(inside_fd_other.as_raw_fd(), false)
+                .expect("Can't clear FD_CLOEXEC flag for inside");
+            set_cloexec(outside_fd_other.as_raw_fd(), false)
+                .expect("Can't clear FD_CLOEXEC flag for outside");
+            for fd in [&inside_fd_own,
+                &inside_fd_other,
+                &outside_fd_own, &outside_fd_other]
+            {
+                setsockopt(fd, sockopt::RcvBuf, &2000000)
+                    .expect("Can't set SO_RCVBUF");
+            }
+
+            // Start the processor
+            let pipe_read_str = format!("{}", pipe_read.as_raw_fd());
+            let inside_fd_other_str = inside_fd_other.as_raw_fd().to_string();
+            let outside_fd_other_str = outside_fd_other.as_raw_fd().to_string();
+            let cmd_interp : Vec<String> = cmd.iter().map(|s| {
+                let mut sr = s.replace("{control}", &pipe_read_str);
+                sr = sr.replace("{inside}", &inside_fd_other_str);
+                sr = sr.replace("{outside}", &outside_fd_other_str);
+                sr
+            }).collect();
+            let _ = process::Command::new(&cmd_interp[0])
+                .args(&cmd_interp[1..])
+                .spawn()
+                .expect("Could not start process");
+
+            // Close FDs we passed on
+            drop(pipe_read);
+            drop(inside_fd_other);
+            drop(outside_fd_other);
+
+            // Mark our file descriptors as non-blocking
+            //
+            // This is helpful to avoid possible dead locks.
+            outside_fd_own.set_nonblocking(true)
+                .expect("Can't make inside socket non-blocking");
+            inside_fd_own.set_nonblocking(true)
+                .expect("Can't make outside socket non-blocking");
+
+            // Start processing threads
+            let outside_fd2 = outside_fd_own.try_clone().unwrap();
+            let conn_weak1 = Arc::downgrade(&conn);
+            thread::spawn(move || {
+                let mut poll_fds = [
+                    PollFd::new(outside_fd2.as_fd(), PollFlags::POLLIN),
+                ];
+                let mut buf = BytesMut::with_capacity(4096);
+                loop {
+                    buf.resize(buf.capacity(), 0);
+                    match poll(&mut poll_fds, PollTimeout::NONE) {
+                        Ok(_) => {
+                            if let Some(revents) = poll_fds[0].revents() {
+                                if revents.intersects(PollFlags::POLLHUP | PollFlags::POLLERR) {
+                                    // Hang up, terminate.
+                                    return;
+                                } else if revents.intersects(PollFlags::POLLIN) {
+                                    match outside_fd2.recv(&mut buf) {
+                                        Ok(sz) => {
+                                            buf.truncate(sz);
+                                            if let Some(conn) = conn_weak1.upgrade() {
+                                                // XXX errors
+                                                let _ = conn.lock().unwrap()
+                                                    .inside_data_received2(&mut buf);
+                                            } else {
+                                                // Weak pointer is gone, terminate.
+                                                return;
+                                            }
+                                        },
+                                        Err(e) if e.kind() == io::ErrorKind::WouldBlock
+                                            || e.kind() == io::ErrorKind::Interrupted =>
+                                        {
+                                            // Not a fatal error, retry.
+                                            continue;
+                                        },
+                                        Err(e) => {
+                                            eprintln!("Unhandled recv() error: {:?}", e);
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        Err(Errno::EINTR) => {
+                        },
+                        Err(e) => {
+                            eprintln!("Poll failed: {}", e);
+                            return;
+                        }
+                    };
+                }
+            });
+            let inside_fd2 = inside_fd_own.try_clone().unwrap();
+            let conn_weak2 = Arc::downgrade(&conn);
+            thread::spawn(move || {
+                let mut poll_fds = [
+                    PollFd::new(inside_fd2.as_fd(), PollFlags::POLLIN),
+                ];
+                loop {
+                    let mut buf = BytesMut::with_capacity(4096);
+                    buf.resize(buf.capacity(), 0); // XXX there must be a better way.
+
+                    match poll(&mut poll_fds, PollTimeout::NONE) {
+                        Ok(_) => {
+                            if let Some(revents) = poll_fds[0].revents() {
+                                if revents.intersects(PollFlags::POLLHUP | PollFlags::POLLERR) {
+                                    // Hang up, terminate.
+                                    return;
+                                } else if revents.intersects(PollFlags::POLLIN) {
+                                    match inside_fd2.recv(&mut buf) {
+                                        Ok(sz) => {
+                                            buf.truncate(sz);
+                                            if let Some(conn) = conn_weak2.upgrade() {
+                                                // XXX errors
+                                                let _ = conn.lock().unwrap()
+                                                    .handle_outside_data_bytes2(buf);
+                                            } else {
+                                                // Weak pointer gone, terminate.
+                                                return;
+                                            }
+                                        },
+                                        Err(e) if e.kind() == io::ErrorKind::WouldBlock
+                                            || e.kind() == io::ErrorKind::Interrupted =>
+                                        {
+                                            // Not a fatal error, retry.
+                                            continue;
+                                        },
+                                        Err(e) => {
+                                            eprintln!("Unhandled recv() error: {:?}", e);
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        Err(Errno::EINTR) => {
+                        },
+                        Err(e) => {
+                            eprintln!("Poll failed: {}", e);
+                            return;
+                        },
+                    }
+                }
+            });
+            
+            // Return
+            Some(GenericInsideProcessor {
+                inside_fd: inside_fd_own,
+                outside_fd: outside_fd_own,
+                _control_pipe: File::from(pipe_write),
+            })
+        },
+    }
 }
 
 impl<AppState: 'static + Sync + Send> Connection<AppState> {
     /// Construct a new connection
-    fn new(args: NewConnectionArgs<AppState>) -> ConnectionResult<Self> {
+    fn new_mutex(args: NewConnectionArgs<AppState>)
+        -> ConnectionResult<Arc<Mutex<Self>>>
+    {
         let now = Instant::now();
         let max_fragment_map_entries = args.max_fragment_map_entries;
         let mut conn = Connection {
@@ -404,6 +635,7 @@ impl<AppState: 'static + Sync + Send> Connection<AppState> {
             },
             fragment_counter: Wrapping(0),
             is_first_packet_received: false,
+            inside_processor: None,
         };
 
         // This will very likely fail since negotiation always needs
@@ -417,7 +649,12 @@ impl<AppState: 'static + Sync + Send> Connection<AppState> {
 
         conn.update_tick_interval();
 
-        Ok(conn)
+        // Generic accessor
+        let conn_mutex = Arc::new(Mutex::new(conn));
+        conn_mutex.lock().unwrap().inside_processor
+            = make_inside_processor(&conn_mutex, &args.generic_proc_cmd);
+
+        Ok(conn_mutex)
     }
 
     /// Gets the application state for this [`Connection`].
@@ -721,10 +958,22 @@ impl<AppState: 'static + Sync + Send> Connection<AppState> {
         result
     }
 
+    /// Consume a packet received from inside path.
+    pub fn inside_data_received(&mut self, pkt: &mut BytesMut) -> ConnectionResult<()> {
+        match self.inside_processor {
+            Some(ref inside_proc) => {
+                // XXX error, XXX blocking
+                let _ = inside_proc.inside_fd.send(pkt.as_ref());
+                Ok(())
+            },
+            None => self.inside_data_received2(pkt),
+        }
+    }
+
     /// Consume data received from inside path and send it as
     /// outside data packet.
     /// The returned Poll value reflects the inside I/O requirements.
-    pub fn inside_data_received(&mut self, pkt: &mut BytesMut) -> ConnectionResult<()> {
+    fn inside_data_received2(&mut self, pkt: &mut BytesMut) -> ConnectionResult<()> {
         use ConnectionError::InvalidInsidePacket;
         use InvalidPacketError::{InvalidIpv4Packet, InvalidPacketSize};
 
@@ -1320,6 +1569,18 @@ impl<AppState: 'static + Sync + Send> Connection<AppState> {
             }
         }
 
+        // Forward to processor
+        match self.inside_processor {
+            Some(ref inside_proc) => {
+                // XXX error checks, XXX blocking
+                let _ = inside_proc.outside_fd.send(inside_pkt.as_ref());
+                Ok(())
+            },
+            None => self.handle_outside_data_bytes2(inside_pkt)
+        }
+    }
+
+    fn handle_outside_data_bytes2(&mut self, inside_pkt: BytesMut) -> ConnectionResult<()> {
         // Send packet to inside io
         self.activity.last_data_traffic_from_peer = Instant::now();
         match self.inside_io.send(inside_pkt, &mut self.app_state) {
@@ -1359,3 +1620,5 @@ impl<AppState: 'static + Sync + Send> Connection<AppState> {
         }
     }
 }
+
+// vim:ts=4:et:sts=4
