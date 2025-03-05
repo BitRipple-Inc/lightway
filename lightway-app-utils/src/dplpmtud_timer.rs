@@ -64,7 +64,7 @@ pub trait DplpmtudTickable: Send + Sync {
     fn pmtud_tick(&self) -> ConnectionResult<()>;
 }
 
-impl<AppState: Send> DplpmtudTickable for Mutex<Connection<AppState>> {
+impl<AppState: 'static + Send + Sync> DplpmtudTickable for Mutex<Connection<AppState>> {
     fn pmtud_tick(&self) -> ConnectionResult<()> {
         self.lock().unwrap().pmtud_tick()
     }

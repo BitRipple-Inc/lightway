@@ -193,7 +193,7 @@ impl<T: Send + Sync> ClientIpConfig<ConnectionState<T>> for ClientIpConfigCb {
     }
 }
 
-pub struct ConnectionState<T: Send + Sync = ()> {
+pub struct ConnectionState<T: 'static + Send + Sync = ()> {
     /// Handler for tick callbacks.
     pub ticker: ConnectionTicker,
     /// InsideIpConfig received from server

@@ -63,7 +63,7 @@ pub trait Tickable: Send + Sync {
     fn tick(&self) -> ConnectionResult<()>;
 }
 
-impl<AppState: Send> Tickable for Mutex<Connection<AppState>> {
+impl<AppState: 'static + Send + Sync> Tickable for Mutex<Connection<AppState>> {
     fn tick(&self) -> ConnectionResult<()> {
         self.lock().unwrap().tick()
     }

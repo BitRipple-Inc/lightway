@@ -27,7 +27,7 @@ pub struct ConnectionState {
     // The backend IP (from IP pool) associated with this connection
     pub internal_ip: Option<Ipv4Addr>,
     // The connection
-    pub(crate) conn: std::cell::OnceCell<Weak<Connection>>,
+    pub(crate) conn: std::sync::OnceLock<Weak<Connection>>,
 }
 
 impl ConnectionTickerState for ConnectionState {
@@ -66,7 +66,7 @@ impl Connection {
             local_addr,
             peer_addr: outside_io.peer_addr(),
             internal_ip: None,
-            conn: std::cell::OnceCell::new(),
+            conn: std::sync::OnceLock::new(),
         };
 
         let lw_conn = ctx.start_accept(protocol_version, outside_io)?

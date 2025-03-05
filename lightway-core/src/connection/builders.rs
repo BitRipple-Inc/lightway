@@ -69,7 +69,7 @@ pub struct ClientConnectionBuilder<AppState> {
     outside_plugins: Arc<PluginList>,
 }
 
-impl<AppState: Send + 'static> ClientConnectionBuilder<AppState> {
+impl<AppState: 'static + Sync + Send> ClientConnectionBuilder<AppState> {
     /// Create a new client connection builder
     pub(crate) fn new(
         ctx: ClientContext<AppState>,
@@ -274,7 +274,7 @@ pub struct ServerConnectionBuilder<'a, AppState> {
     outside_plugins: Arc<PluginList>,
 }
 
-impl<'a, AppState: Send + 'static> ServerConnectionBuilder<'a, AppState> {
+impl<'a, AppState: 'static + Sync + Send> ServerConnectionBuilder<'a, AppState> {
     /// Create a new server connection builder
     pub(crate) fn new(
         ctx: &'a ServerContext<AppState>,

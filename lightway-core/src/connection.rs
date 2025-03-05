@@ -365,7 +365,7 @@ struct NewConnectionArgs<AppState> {
     pmtud_timer: Option<dplpmtud::TimerArg<AppState>>,
 }
 
-impl<AppState: Send> Connection<AppState> {
+impl<AppState: 'static + Sync + Send> Connection<AppState> {
     /// Construct a new connection
     fn new(args: NewConnectionArgs<AppState>) -> ConnectionResult<Self> {
         let now = Instant::now();

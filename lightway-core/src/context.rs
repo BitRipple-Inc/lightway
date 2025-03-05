@@ -106,7 +106,7 @@ pub struct ClientContext<AppState> {
     pub(crate) outside_plugins: Arc<PluginFactoryList>,
 }
 
-impl<AppState: Send + 'static> ClientContext<AppState> {
+impl<AppState: 'static + Sync + Send> ClientContext<AppState> {
     /// Start connecting to a server, creating a
     /// [`ClientConnectionBuilder`].
     pub fn start_connect(
@@ -257,7 +257,7 @@ pub struct ServerContext<AppState = ()> {
     pub(crate) outside_plugins_instance: PluginList,
 }
 
-impl<AppState: Send + 'static> ServerContext<AppState> {
+impl<AppState: 'static + Sync + Send> ServerContext<AppState> {
     /// Predicate returning whether `v` is a supported `Version`
     pub fn is_supported_version(&self, v: Version) -> bool {
         self.supported_protocol_versions.contains(v)
