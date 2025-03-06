@@ -449,6 +449,8 @@ fn make_inside_processor<AppState: 'static + Sync + Send>(
             {
                 setsockopt(fd, sockopt::RcvBuf, &2000000)
                     .expect("Can't set SO_RCVBUF");
+                setsockopt(fd, sockopt::SndBuf, &2000000)
+                    .expect("Can't set SO_SNDBUF");
             }
 
             // Start the processor
@@ -962,8 +964,15 @@ impl<AppState: 'static + Sync + Send> Connection<AppState> {
     pub fn inside_data_received(&mut self, pkt: &mut BytesMut) -> ConnectionResult<()> {
         match self.inside_processor {
             Some(ref inside_proc) => {
-                // XXX error, XXX blocking
-                let _ = inside_proc.inside_fd.send(pkt.as_ref());
+                match inside_proc.inside_fd.send(pkt.as_ref()) {
+                    Ok(_) => { },
+                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                        println!("drop when sending to tun");
+                    },
+                    Err(ref e) => {
+                        eprintln!("inside_proc send() failed: {:?}", e);
+                    },
+                };
                 Ok(())
             },
             None => self.inside_data_received2(pkt),
@@ -1572,8 +1581,15 @@ impl<AppState: 'static + Sync + Send> Connection<AppState> {
         // Forward to processor
         match self.inside_processor {
             Some(ref inside_proc) => {
-                // XXX error checks, XXX blocking
-                let _ = inside_proc.outside_fd.send(inside_pkt.as_ref());
+                match inside_proc.outside_fd.send(inside_pkt.as_ref()) {
+                    Ok(_) => { },
+                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                        println!("drop when sending to outside");
+                    },
+                    Err(ref e) => {
+                        eprintln!("inside_proc send() failed: {:?}", e);
+                    },
+                };
                 Ok(())
             },
             None => self.handle_outside_data_bytes2(inside_pkt)
