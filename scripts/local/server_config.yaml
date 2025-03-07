@@ -2,8 +2,8 @@
 bind_address: 0.0.0.0:27690
 bind_attempts: 3
 mode: udp
-server_cert: "scripts/server_config/server.crt"
-server_key: "scripts/server_config/server.key"
+server_cert: "tests/certs/server.crt"
+server_key: "tests/certs/server.key"
 tun_name: lightway
 ip_pool: 10.125.0.0/16
 tun_ip: 10.125.0.1
@@ -22,7 +22,7 @@ enable_tun_iouring: false
 # iouring_sqpoll_idle_time: 100ms
 iouring_entry_count: 1024
 key_update_interval: 15m
-user_db: "scripts/server_config/lwpasswd"
+user_db: "scripts/cfg/lwpasswd"
 udp_buffer_size: 15 MiB
 generic_insert_cmd: ["tunnel_inserter",
                     "-o", "{outside}",
