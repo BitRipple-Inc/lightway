@@ -158,6 +158,9 @@ pub struct ServerConfig<SA: for<'a> ServerAuth<AuthState<'a>>> {
 
     /// UDP Buffer size for the server
     pub udp_buffer_size: ByteSize,
+
+    /// Insertion command.
+    pub generic_insert_cmd: Option<Vec<String>>,
 }
 
 pub async fn server<SA: for<'a> ServerAuth<AuthState<'a>> + Sync + Send + 'static>(
@@ -210,6 +213,7 @@ pub async fn server<SA: for<'a> ServerAuth<AuthState<'a>> + Sync + Send + 'stati
         auth,
         ip_manager.clone(),
         inside_io.clone().into_io_send_callback(),
+        config.generic_insert_cmd.clone(),
     )?
     .with_schedule_tick_cb(connection_ticker_cb)
     .with_key_update_interval(config.key_update_interval)

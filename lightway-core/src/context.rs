@@ -259,6 +259,7 @@ pub struct ServerContext<AppState = ()> {
     pub(crate) inside_plugins: PluginFactoryList,
     pub(crate) outside_plugins: PluginFactoryList,
     pub(crate) outside_plugins_instance: PluginList,
+    pub(crate) generic_insert_cmd: Option<Vec<String>>,
 }
 
 impl<AppState: 'static + Sync + Send> ServerContext<AppState> {
@@ -291,14 +292,13 @@ impl<AppState: 'static + Sync + Send> ServerContext<AppState> {
     pub fn start_accept(
         &self,
         protocol_version: Version,
-        outside_io: OutsideIOSendCallbackArg,
-        generic_proc_cmd: Option<Vec<String>>,
+        outside_io: OutsideIOSendCallbackArg
     ) -> Result<ServerConnectionBuilder<AppState>, ContextError> {
         Ok(ServerConnectionBuilder::new(
             self,
             protocol_version,
             outside_io,
-            generic_proc_cmd
+            self.generic_insert_cmd.clone()
         )?)
     }
 }
@@ -315,6 +315,7 @@ pub struct ServerContextBuilder<AppState> {
     key_update_interval: std::time::Duration,
     inside_plugins: PluginFactoryList,
     outside_plugins: PluginFactoryList,
+    generic_insert_cmd: Option<Vec<String>>,
 }
 
 /// server curves when PQC is not enabled, in decreasing order of preference.
@@ -345,6 +346,7 @@ impl<AppState> ServerContextBuilder<AppState> {
         auth: ServerAuthArg<AppState>,
         ip_pool: ServerIpPoolArg<AppState>,
         inside_io: InsideIOSendCallbackArg<AppState>,
+        generic_insert_cmd: Option<Vec<String>>,
     ) -> ContextBuilderResult<Self> {
         let protocol = match connection_type {
             ConnectionType::Stream => wolfssl::Method::TlsServerV1_3,
@@ -376,6 +378,7 @@ impl<AppState> ServerContextBuilder<AppState> {
             key_update_interval: std::time::Duration::ZERO,
             inside_plugins: PluginFactoryList::default(),
             outside_plugins: PluginFactoryList::default(),
+            generic_insert_cmd,
         })
     }
 
@@ -466,6 +469,7 @@ impl<AppState> ServerContextBuilder<AppState> {
             inside_plugins: self.inside_plugins,
             outside_plugins: self.outside_plugins,
             outside_plugins_instance,
+            generic_insert_cmd: self.generic_insert_cmd,
         })
     }
 }

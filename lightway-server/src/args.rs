@@ -121,4 +121,8 @@ pub struct Config {
     #[cfg(feature = "debug")]
     #[clap(long)]
     pub tls_debug: bool,
+
+    /// command to run for inside packet processing
+    #[clap(long)]
+    pub generic_insert_cmd: Option<Vec<String>>,
 }

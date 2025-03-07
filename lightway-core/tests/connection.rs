@@ -188,6 +188,7 @@ async fn server<S: TestSock>(sock: Arc<S>, pqc: PQCrypto) {
         auth,
         ip_pool,
         Arc::new(tun),
+        None,
     )
     .unwrap()
     .with_schedule_tick_cb(connection_ticker_cb)
@@ -201,7 +202,7 @@ async fn server<S: TestSock>(sock: Arc<S>, pqc: PQCrypto) {
 
     let (ticker, ticker_task) = ConnectionTicker::new();
     let conn = server_ctx
-            .start_accept(Version::MAXIMUM, sock.clone().into_io_send_callback(), None)
+            .start_accept(Version::MAXIMUM, sock.clone().into_io_send_callback())
             .unwrap()
             .accept(ticker)
             .unwrap();

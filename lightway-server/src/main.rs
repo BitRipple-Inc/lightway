@@ -141,6 +141,7 @@ async fn main() -> Result<()> {
         bind_attempts: config.bind_attempts,
         proxy_protocol: config.proxy_protocol,
         udp_buffer_size: config.udp_buffer_size,
+        generic_insert_cmd: config.generic_insert_cmd,
     };
 
     server(config).await
