@@ -25,7 +25,7 @@ enable_pmtud: false
 generic_insert_cmd: ["tunnel_inserter",
                   "-o", "{outside}",
                   "-c", "{control}",
-                  "--stderr-file", "brt_client_log.txt",
+                  "--stderr-file", "/tmp/brt_client_log.txt",
                   "--local-addr", "10.125.0.2",
                   "--remote-addr", "10.125.0.1",
                   "--local-ports", "9000", "9001", "9002", "9003",

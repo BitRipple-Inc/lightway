@@ -27,7 +27,7 @@ udp_buffer_size: 15 MiB
 generic_insert_cmd: ["tunnel_inserter",
                     "-o", "{outside}",
                     "-c", "{control}",
-                    "--stderr-file", "brt_server_log.txt",
+                    "--stderr-file", "/tmp/brt_server_log.txt",
                     "--local-addr", "10.125.0.1",
                     "--remote-addr", "10.125.0.2",
                     "--local-ports", "9000", "9001", "9002", "9003",

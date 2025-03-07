@@ -2,4 +2,4 @@
 
 set -e
 
-ip netns exec lightway-server zsh
+ip netns exec lightway-server $SHELL
