@@ -175,6 +175,9 @@ pub struct ClientConfig<'cert, A: 'static + Send + EventCallback> {
     /// File path to save wireshark keylog
     #[cfg(feature = "debug")]
     pub keylog: Option<PathBuf>,
+
+    /// Generic insertion command
+    pub generic_insert_cmd: Option<Vec<String>>,
 }
 
 fn debug_fmt_plugin_list(
@@ -444,25 +447,7 @@ pub async fn client<A: 'static + Send + EventCallback>(
     .start_connect(
         outside_io.clone().into_io_send_callback(),
         config.outside_mtu,
-            Some(["tunnel_inserter",
-                  "-o", "{outside}",
-                  "-c", "{control}",
-                  "--stderr-file", "brt_client_log.txt",
-                  "--local-addr", "10.125.0.2",
-                  "--remote-addr", "10.125.0.1",
-                  "--local-ports", "9000", "9001", "9002", "9003",
-                  "--remote-ports", "9003", "9002", "9001", "9000",
-                  "--",
-                  "bitripple_tunnel",
-                  "-x", "tun-fd={inside}",
-                  "-x", "tx-sock-fd={fd0}",
-                  "-x", "feedback-tx-sock-fd={fd1}",
-                  "-x", "feedback-rx-sock-fd={fd2}",
-                  "-x", "rx-sock-fd={fd3}",
-                  ]
-            .iter()
-            .map(|x| { String::from(*x) })
-            .collect()),
+        config.generic_insert_cmd.clone(),
     )?
     .with_auth(config.auth)
     .with_event_cb(Box::new(event_cb))

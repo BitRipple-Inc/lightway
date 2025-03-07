@@ -104,6 +104,7 @@ async fn main() -> Result<()> {
         tls_debug: config.tls_debug,
         #[cfg(feature = "debug")]
         keylog: config.keylog,
+        generic_insert_cmd: config.generic_insert_cmd,
     };
 
     client(config).await.map(|_| ())
