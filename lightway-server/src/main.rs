@@ -11,6 +11,7 @@ use tokio_stream::StreamExt;
 use tracing::{error, trace};
 use twelf::Layer;
 
+use xv_bitripple::BitRippleCodecFactory;
 use args::Config;
 #[cfg(feature = "debug")]
 use lightway_app_utils::wolfssl_tracing_callback;
@@ -173,7 +174,23 @@ async fn main() -> Result<()> {
         key_update_interval: config.key_update_interval.into(),
         inside_plugins: Default::default(),
         outside_plugins: Default::default(),
-        inside_pkt_codec: None,
+        inside_pkt_codec: Some(Box::new(BitRippleCodecFactory{ generic_insert_cmd: vec![
+            "../tunnel_inserter/result/bin/tunnel_inserter".to_string(),
+            "-o".to_string(), "{outside}".to_string(),
+            "-c".to_string(), "{control}".to_string(),
+            "--stderr-file".to_string(), "/tmp/brt_server_log.txt".to_string(),
+            "--local-addr".to_string(), "10.125.0.1".to_string(),
+            "--remote-addr".to_string(), "10.125.0.2".to_string(),
+            "--local-ports".to_string(), "9000".to_string(), "9001".to_string(), "9002".to_string(), "9003".to_string(),
+            "--remote-ports".to_string(), "9003".to_string(), "9002".to_string(), "9001".to_string(), "9000".to_string(),
+            "--".to_string(),
+            "../Axl/result/bin/bitripple_tunnel".to_string(),
+            "-x".to_string(), "tun-fd={inside}".to_string(),
+            "-x".to_string(), "tx-sock-fd={fd0}".to_string(),
+            "-x".to_string(), "feedback-tx-sock-fd={fd1}".to_string(),
+            "-x".to_string(), "feedback-rx-sock-fd={fd2}".to_string(),
+            "-x".to_string(), "rx-sock-fd={fd3}".to_string(),
+        ]})),
         bind_address: config.bind_address,
         proxy_protocol: config.proxy_protocol,
         udp_buffer_size: config.udp_buffer_size,

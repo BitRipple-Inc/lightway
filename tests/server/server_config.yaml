@@ -1,7 +1,7 @@
 ---
 bind_address: 0.0.0.0:27690
 bind_attempts: 3
-mode: tcp
+mode: udp
 server_cert: "tests/certs/server.crt"
 server_key: "tests/certs/server.key"
 tun_name: lightway

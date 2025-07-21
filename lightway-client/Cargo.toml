@@ -40,6 +40,7 @@ tokio-util.workspace = true
 tracing.workspace = true
 tracing-subscriber = { workspace = true}
 twelf.workspace = true
+xv-bitripple.workspace = true
 
 [dev-dependencies]
 more-asserts.workspace = true
