@@ -143,12 +143,11 @@ async fn main() -> Result<()> {
             "-x".to_string(), "feedback-rx-sock-fd={fd2}".to_string(),
             "-x".to_string(), "rx-sock-fd={fd3}".to_string(),
             // Logs filters
-            "-x".to_string(), "log-filter=~10".to_string()
+            // "-x".to_string(), "log-filter=~10".to_string(),
             "-x".to_string(), "log-filter=StreamObserver~10:~30".to_string() // just StreamObserver to 10, rest to 30.
  
         ]})),
         inside_pkt_codec_config: Some(ClientInsidePacketCodecConfig{enable_encoding_at_connect: true, encoding_request_signal: encoding_request_rx}), 
-        inside_pkt_codec_config: None,
         stop_signal: ctrlc_rx,
         network_change_signal: None,
         event_handler: Some(EventHandler),
