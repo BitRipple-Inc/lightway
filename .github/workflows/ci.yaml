@@ -9,14 +9,82 @@ concurrency:
   cancel-in-progress:  ${{ github.ref_name != 'main' }}
 
 jobs:
-  ci:
-    needs: [nix-build]
-    runs-on: ubuntu-latest
-    if: always()
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
-      - shell: bash
-        run: |
-          [[ $(echo '${{ toJSON(needs) }}' | jq 'map(select(.result != "success")) | length == 0') == 'true' ]] || exit 1
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Run tests
+        run: cargo test --all-features --workspace
+      - name: Run doc tests
+        run: cargo test --doc --all-features --workspace
+      - name: Check that everything builds
+        run: cargo build --all-targets --all-features --workspace
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-deny
+        run: cargo install --locked cargo-deny
+      - name: Run cargo deny
+        run: cargo deny check
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-coverage-${{ hashFiles('**/Cargo.lock') }}
+      - name: Generate coverage
+        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          fail_ci_if_error: true
 
   nix-build:
     name: Nix (${{ matrix.os }})
@@ -31,9 +99,31 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - run: nix flake check
-
       - name: Build lightway client
         run: nix build .#lightway-client
-
       - name: Build lightway server
         run: nix build .#lightway-server
+
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Check if all dependencies are available
+        run: cargo check --all-targets --all-features --workspace
+      - name: Install cargo-outdated
+        run: cargo install --locked cargo-outdated
+      - name: Check for outdated dependencies
+        run: cargo outdated --root-deps-only
+
+  # Aggregate job
+  ci:
+    needs: [test, security-audit, coverage, nix-build, dependency-check]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - shell: bash
+        run: |
+          [[ $(echo '${{ toJSON(needs) }}' | jq 'map(select(.result != "success")) | length == 0') == 'true' ]] || exit 1
