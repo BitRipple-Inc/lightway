@@ -11,7 +11,6 @@ use tokio_stream::StreamExt;
 use tracing::{error, trace};
 use twelf::Layer;
 
-use xv_bitripple::BitRippleCodecFactory;
 use args::Config;
 #[cfg(feature = "debug")]
 use lightway_app_utils::wolfssl_tracing_callback;
@@ -19,183 +18,204 @@ use lightway_app_utils::{TunConfig, Validate, validate_configuration_file_path};
 #[cfg(feature = "debug")]
 use lightway_core::set_logging_callback;
 use lightway_server::*;
+use xv_bitripple::BitRippleCodecFactory;
 
 async fn metrics_debug() {
-    if !tracing::enabled!(tracing::Level::TRACE) {
-        return;
-    }
-    trace!("Logging metrics as trace messages");
+  if !tracing::enabled!(tracing::Level::TRACE) {
+    return;
+  }
+  trace!("Logging metrics as trace messages");
 
-    let stats_recorder = DebuggingRecorder::new();
+  let stats_recorder = DebuggingRecorder::new();
 
-    let snapshotter = stats_recorder.snapshotter();
+  let snapshotter = stats_recorder.snapshotter();
 
-    if let Err(e) = stats_recorder.install() {
-        error!("Error installing stats_recorder: {:?}", e);
-        return;
-    }
+  if let Err(e) = stats_recorder.install() {
+    error!("Error installing stats_recorder: {:?}", e);
+    return;
+  }
 
-    let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
-    ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-    let mut ticker = tokio_stream::wrappers::IntervalStream::new(ticker);
+  let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
+  ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+  let mut ticker = tokio_stream::wrappers::IntervalStream::new(ticker);
 
-    while ticker.next().await.is_some() {
-        let snapshot = snapshotter.snapshot();
+  while ticker.next().await.is_some() {
+    let snapshot = snapshotter.snapshot();
 
-        for (key, _maybe_units, _maybe_description, value) in snapshot.into_vec() {
-            let (_, key) = key.into_parts();
-            let (name, labels) = key.into_parts();
-            match value {
-                metrics_util::debugging::DebugValue::Counter(value) => {
-                    trace!("metric: {} {labels:?} = Counter({value:?})", name.as_str())
-                }
-                metrics_util::debugging::DebugValue::Gauge(value) => {
-                    trace!("metric: {} {labels:?} = Guage({value:?})", name.as_str())
-                }
-                metrics_util::debugging::DebugValue::Histogram(values) => {
-                    // TODO: https://docs.rs/average/latest/average/macro.concatenate.html for min/max and avg?
-
-                    use average::{Estimate, Max, Mean, Min, concatenate};
-
-                    concatenate!(Stats, [Min, min], [Mean, mean], [Max, max]);
-                    let len = values.len();
-                    let s: Stats = values.into_iter().map(|f| f.into_inner()).collect();
-
-                    trace!(
-                        "metric: {} {labels:?} = Histogram({} samples min/avg/max {:.2}/{:.2}/{:.2})",
-                        name.as_str(),
-                        len,
-                        s.min(),
-                        s.mean(),
-                        s.max(),
-                    )
-                }
-            };
+    for (key, _maybe_units, _maybe_description, value) in snapshot.into_vec() {
+      let (_, key) = key.into_parts();
+      let (name, labels) = key.into_parts();
+      match value {
+        metrics_util::debugging::DebugValue::Counter(value) => {
+          trace!("metric: {} {labels:?} = Counter({value:?})", name.as_str())
         }
+        metrics_util::debugging::DebugValue::Gauge(value) => {
+          trace!("metric: {} {labels:?} = Guage({value:?})", name.as_str())
+        }
+        metrics_util::debugging::DebugValue::Histogram(values) => {
+          // TODO: https://docs.rs/average/latest/average/macro.concatenate.html for min/max and avg?
+
+          use average::{Estimate, Max, Mean, Min, concatenate};
+
+          concatenate!(Stats, [Min, min], [Mean, mean], [Max, max]);
+          let len = values.len();
+          let s: Stats = values.into_iter().map(|f| f.into_inner()).collect();
+
+          trace!(
+            "metric: {} {labels:?} = Histogram({} samples min/avg/max {:.2}/{:.2}/{:.2})",
+            name.as_str(),
+            len,
+            s.min(),
+            s.mean(),
+            s.max(),
+          )
+        }
+      };
     }
+  }
 }
 
 #[tokio::main(worker_threads = 1)]
 async fn main() -> Result<()> {
-    let matches = Config::command().get_matches();
+  let matches = Config::command().get_matches();
 
-    // Fetch the config filepath from CLI and load it as config
-    let Some(config_file) = matches.get_one::<PathBuf>("config_file") else {
-        return Err(anyhow!("Config file not present"));
-    };
+  // Fetch the config filepath from CLI and load it as config
+  let Some(config_file) = matches.get_one::<PathBuf>("config_file") else {
+    return Err(anyhow!("Config file not present"));
+  };
 
-    validate_configuration_file_path(config_file, Validate::AllowWorldRead)
-        .with_context(|| format!("Invalid configuration file {}", config_file.display()))?;
+  validate_configuration_file_path(config_file, Validate::AllowWorldRead)
+    .with_context(|| format!("Invalid configuration file {}", config_file.display()))?;
 
-    let config = Config::with_layers(&[
-        Layer::Yaml(config_file.to_owned()),
-        Layer::Env(Some(String::from("LW_SERVER_"))),
-        Layer::Clap(matches),
-    ])?;
+  let config = Config::with_layers(&[
+    Layer::Yaml(config_file.to_owned()),
+    Layer::Env(Some(String::from("LW_SERVER_"))),
+    Layer::Clap(matches),
+  ])?;
 
-    validate_configuration_file_path(&config.server_key, Validate::OwnerOnly)
-        .with_context(|| format!("Invalid server key file {}", config.server_key.display()))?;
-    validate_configuration_file_path(&config.server_cert, Validate::AllowWorldRead)
-        .with_context(|| format!("Invalid server cert file {}", config.server_cert.display()))?;
+  validate_configuration_file_path(&config.server_key, Validate::OwnerOnly)
+    .with_context(|| format!("Invalid server key file {}", config.server_key.display()))?;
+  validate_configuration_file_path(&config.server_cert, Validate::AllowWorldRead)
+    .with_context(|| format!("Invalid server cert file {}", config.server_cert.display()))?;
 
-    if let Some(user_db) = &config.user_db {
-        validate_configuration_file_path(user_db, Validate::OwnerOnly)
-            .with_context(|| format!("Invalid user db file {}", user_db.display()))?;
-    }
+  if let Some(user_db) = &config.user_db {
+    validate_configuration_file_path(user_db, Validate::OwnerOnly)
+      .with_context(|| format!("Invalid user db file {}", user_db.display()))?;
+  }
 
-    #[cfg(feature = "debug")]
-    if config.tls_debug {
-        set_logging_callback(Some(wolfssl_tracing_callback));
-    }
+  #[cfg(feature = "debug")]
+  if config.tls_debug {
+    set_logging_callback(Some(wolfssl_tracing_callback));
+  }
 
-    let fmt = tracing_subscriber::fmt().with_max_level(config.log_level);
+  let fmt = tracing_subscriber::fmt().with_max_level(config.log_level);
 
-    config.log_format.init(fmt);
+  config.log_format.init(fmt);
 
-    tokio::spawn(metrics_debug());
+  tokio::spawn(metrics_debug());
 
-    std::thread::spawn(move || {
-        use parking_lot::deadlock;
-        use std::time::Duration;
+  std::thread::spawn(move || {
+    use parking_lot::deadlock;
+    use std::time::Duration;
 
-        loop {
-            std::thread::sleep(Duration::from_secs(10));
-            let deadlocks = deadlock::check_deadlock();
-            if deadlocks.is_empty() {
-                continue;
-            }
+    loop {
+      std::thread::sleep(Duration::from_secs(10));
+      let deadlocks = deadlock::check_deadlock();
+      if deadlocks.is_empty() {
+        continue;
+      }
 
-            error!("{} deadlocks detected", deadlocks.len());
-            for (i, threads) in deadlocks.iter().enumerate() {
-                error!("Deadlock #{}", i);
-                for t in threads {
-                    error!("Thread Id {:#?}", t.thread_id());
-                    error!("{:#?}", t.backtrace());
-                }
-            }
+      error!("{} deadlocks detected", deadlocks.len());
+      for (i, threads) in deadlocks.iter().enumerate() {
+        error!("Deadlock #{}", i);
+        for t in threads {
+          error!("Thread Id {:#?}", t.thread_id());
+          error!("{:#?}", t.backtrace());
         }
-    });
-
-    let auth = auth::Auth::new(
-        config.user_db.as_ref().map(AsRef::as_ref),
-        config.token_rsa_pub_key_pem.as_ref().map(AsRef::as_ref),
-    )?;
-
-    let mut tun_config = TunConfig::default();
-    if let Some(tun_name) = config.tun_name {
-        tun_config.tun_name(tun_name);
+      }
     }
-    let mode = match config.mode {
-        lightway_app_utils::args::ConnectionType::Udp => ServerConnectionMode::Datagram(None),
-        lightway_app_utils::args::ConnectionType::Tcp => ServerConnectionMode::Stream(None),
-    };
+  });
 
-    let config = ServerConfig {
-        mode,
-        auth,
-        server_cert: config.server_cert,
-        server_key: config.server_key,
-        tun_config,
-        ip_pool: config.ip_pool,
-        ip_map: config.ip_map.unwrap_or_default().try_into()?,
-        inside_io: None,
-        tun_ip: config.tun_ip,
-        lightway_server_ip: config.lightway_server_ip,
-        lightway_client_ip: config.lightway_client_ip,
-        lightway_dns_ip: config.lightway_dns_ip,
-        use_dynamic_client_ip: false,
-        enable_pqc: config.enable_pqc,
-        #[cfg(feature = "io-uring")]
-        enable_tun_iouring: config.enable_tun_iouring,
-        #[cfg(feature = "io-uring")]
-        iouring_entry_count: config.iouring_entry_count,
-        #[cfg(feature = "io-uring")]
-        iouring_sqpoll_idle_time: config.iouring_sqpoll_idle_time.into(),
-        key_update_interval: config.key_update_interval.into(),
-        inside_plugins: Default::default(),
-        outside_plugins: Default::default(),
-        inside_pkt_codec: Some(Box::new(BitRippleCodecFactory{ generic_insert_cmd: vec![
-            "../tunnel_inserter/result/bin/tunnel_inserter".to_string(),
-            "-o".to_string(), "{outside}".to_string(),
-            "-c".to_string(), "{control}".to_string(),
-            "--stderr-file".to_string(), "/tmp/brt_server_log.txt".to_string(),
-            "--local-addr".to_string(), "10.125.0.1".to_string(),
-            "--remote-addr".to_string(), "10.125.0.2".to_string(),
-            "--local-ports".to_string(), "9000".to_string(), "9001".to_string(), "9002".to_string(), "9003".to_string(),
-            "--remote-ports".to_string(), "9003".to_string(), "9002".to_string(), "9001".to_string(), "9000".to_string(),
-            "--".to_string(),
-            // "../Axl/result/bin/bitripple_tunnel".to_string(),
-            "../AxlRust/result/bin/axlrust-main".to_string(),
-            "-x".to_string(), "tun-fd={inside}".to_string(),
-            "-x".to_string(), "tx-sock-fd={fd0}".to_string(),
-            "-x".to_string(), "feedback-tx-sock-fd={fd1}".to_string(),
-            "-x".to_string(), "feedback-rx-sock-fd={fd2}".to_string(),
-            "-x".to_string(), "rx-sock-fd={fd3}".to_string(),
-        ]})),
-        bind_address: config.bind_address,
-        proxy_protocol: config.proxy_protocol,
-        udp_buffer_size: config.udp_buffer_size,
-    };
+  let auth = auth::Auth::new(
+    config.user_db.as_ref().map(AsRef::as_ref),
+    config.token_rsa_pub_key_pem.as_ref().map(AsRef::as_ref),
+  )?;
 
-    server(config).await
+  let mut tun_config = TunConfig::default();
+  if let Some(tun_name) = config.tun_name {
+    tun_config.tun_name(tun_name);
+  }
+  let mode = match config.mode {
+    lightway_app_utils::args::ConnectionType::Udp => ServerConnectionMode::Datagram(None),
+    lightway_app_utils::args::ConnectionType::Tcp => ServerConnectionMode::Stream(None),
+  };
+
+  let config = ServerConfig {
+    mode,
+    auth,
+    server_cert: config.server_cert,
+    server_key: config.server_key,
+    tun_config,
+    ip_pool: config.ip_pool,
+    ip_map: config.ip_map.unwrap_or_default().try_into()?,
+    inside_io: None,
+    tun_ip: config.tun_ip,
+    lightway_server_ip: config.lightway_server_ip,
+    lightway_client_ip: config.lightway_client_ip,
+    lightway_dns_ip: config.lightway_dns_ip,
+    use_dynamic_client_ip: false,
+    enable_pqc: config.enable_pqc,
+    #[cfg(feature = "io-uring")]
+    enable_tun_iouring: config.enable_tun_iouring,
+    #[cfg(feature = "io-uring")]
+    iouring_entry_count: config.iouring_entry_count,
+    #[cfg(feature = "io-uring")]
+    iouring_sqpoll_idle_time: config.iouring_sqpoll_idle_time.into(),
+    key_update_interval: config.key_update_interval.into(),
+    inside_plugins: Default::default(),
+    outside_plugins: Default::default(),
+    inside_pkt_codec: Some(Box::new(BitRippleCodecFactory {
+      generic_insert_cmd: vec![
+        "../tunnel_inserter/result/bin/tunnel_inserter".to_string(),
+        "-o".to_string(),
+        "{outside}".to_string(),
+        "-c".to_string(),
+        "{control}".to_string(),
+        "--stderr-file".to_string(),
+        "/tmp/brt_server_log.txt".to_string(),
+        "--local-addr".to_string(),
+        "10.125.0.1".to_string(),
+        "--remote-addr".to_string(),
+        "10.125.0.2".to_string(),
+        "--local-ports".to_string(),
+        "9000".to_string(),
+        "9001".to_string(),
+        "9002".to_string(),
+        "9003".to_string(),
+        "--remote-ports".to_string(),
+        "9003".to_string(),
+        "9002".to_string(),
+        "9001".to_string(),
+        "9000".to_string(),
+        "--".to_string(),
+        // "../Axl/result/bin/bitripple_tunnel".to_string(),
+        "../AxlRust/result/bin/axlrust-main".to_string(),
+        "-x".to_string(),
+        "tun-fd={inside}".to_string(),
+        "-x".to_string(),
+        "tx-sock-fd={fd0}".to_string(),
+        "-x".to_string(),
+        "feedback-tx-sock-fd={fd1}".to_string(),
+        "-x".to_string(),
+        "feedback-rx-sock-fd={fd2}".to_string(),
+        "-x".to_string(),
+        "rx-sock-fd={fd3}".to_string(),
+      ],
+    })),
+    bind_address: config.bind_address,
+    proxy_protocol: config.proxy_protocol,
+    udp_buffer_size: config.udp_buffer_size,
+  };
+
+  server(config).await
 }
