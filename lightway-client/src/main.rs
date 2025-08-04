@@ -13,7 +13,7 @@ use lightway_app_utils::{
   TunConfig, Validate, args::ConnectionType, validate_configuration_file_path,
 };
 use lightway_client::{io::inside::InsideIO, *};
-use xv_bitripple::BitRippleCodecFactory;
+use xv_bitripple::{BitRippleCodecFactory, TunnelArgs, TunnelInserterArgs};
 mod args;
 use args::Config;
 
@@ -91,7 +91,29 @@ async fn main() -> Result<()> {
     .next()
     .ok_or_else(|| anyhow!("No addresses resolved for server: {}", config.server))?;
 
-  let (encoding_request_tx, encoding_request_rx) = tokio::sync::mpsc::channel::<bool>(1); // TODO: Check implications
+  let inserter_args = TunnelInserterArgs {
+    local_addr: "10.125.0.2".parse().unwrap(),
+    remote_addr: "10.125.0.1".parse().unwrap(),
+    local_ports: vec![9000, 9001, 9002, 9003],
+    remote_ports: vec![9003, 9002, 9001, 9000],
+    stderr_file: Some("/tmp/brt_client_log.txt".into()),
+  };
+
+  let tunnel_args = TunnelArgs {
+    config_item: vec![
+      "tun-fd={inside}".to_string(),
+      "tx-sock-fd={fd0}".to_string(),
+      "feedback-tx-sock-fd={fd1}".to_string(),
+      "feedback-rx-sock-fd={fd2}".to_string(),
+      "rx-sock-fd={fd3}".to_string(),
+      "log-filter=StreamObserver~10:~30".to_string(),
+    ],
+    ..Default::default()
+  };
+
+  let factory = BitRippleCodecFactory::new(inserter_args, tunnel_args);
+
+  let (_, encoding_request_rx) = tokio::sync::mpsc::channel::<bool>(1); // TODO: Check implications
   let config = ClientConfig {
     mode,
     auth,
@@ -130,48 +152,7 @@ async fn main() -> Result<()> {
     server: server_addr,
     inside_plugins: Default::default(),
     outside_plugins: Default::default(),
-    inside_pkt_codec: Some(Box::new(BitRippleCodecFactory {
-      generic_insert_cmd: vec![
-        "../tunnel_inserter/result/bin/tunnel_inserter".to_string(),
-        "-o".to_string(),
-        "{outside}".to_string(),
-        "-c".to_string(),
-        "{control}".to_string(),
-        "--stderr-file".to_string(),
-        "/tmp/brt_client_log.txt".to_string(),
-        "--local-addr".to_string(),
-        "10.125.0.2".to_string(),
-        "--remote-addr".to_string(),
-        "10.125.0.1".to_string(),
-        "--local-ports".to_string(),
-        "9000".to_string(),
-        "9001".to_string(),
-        "9002".to_string(),
-        "9003".to_string(),
-        "--remote-ports".to_string(),
-        "9003".to_string(),
-        "9002".to_string(),
-        "9001".to_string(),
-        "9000".to_string(),
-        "--".to_string(),
-        // "../Axl/result/bin/bitripple_tunnel".to_string(),
-        "../AxlRust/result/bin/axlrust-main".to_string(),
-        "-x".to_string(),
-        "tun-fd={inside}".to_string(),
-        "-x".to_string(),
-        "tx-sock-fd={fd0}".to_string(),
-        "-x".to_string(),
-        "feedback-tx-sock-fd={fd1}".to_string(),
-        "-x".to_string(),
-        "feedback-rx-sock-fd={fd2}".to_string(),
-        "-x".to_string(),
-        "rx-sock-fd={fd3}".to_string(),
-        // Logs filters
-        // "-x".to_string(), "log-filter=~10".to_string(),
-        "-x".to_string(),
-        "log-filter=StreamObserver~10:~30".to_string(), // just StreamObserver to 10, rest to 30.
-      ],
-    })),
+    inside_pkt_codec: Some(Box::new(factory)),
     inside_pkt_codec_config: Some(ClientInsidePacketCodecConfig {
       enable_encoding_at_connect: true,
       encoding_request_signal: encoding_request_rx,

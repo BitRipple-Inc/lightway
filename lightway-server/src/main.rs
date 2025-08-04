@@ -18,7 +18,7 @@ use lightway_app_utils::{TunConfig, Validate, validate_configuration_file_path};
 #[cfg(feature = "debug")]
 use lightway_core::set_logging_callback;
 use lightway_server::*;
-use xv_bitripple::BitRippleCodecFactory;
+use xv_bitripple::{BitRippleCodecFactory, TunnelArgs, TunnelInserterArgs};
 
 async fn metrics_debug() {
   if !tracing::enabled!(tracing::Level::TRACE) {
@@ -150,6 +150,27 @@ async fn main() -> Result<()> {
     lightway_app_utils::args::ConnectionType::Tcp => ServerConnectionMode::Stream(None),
   };
 
+  let inserter_args = TunnelInserterArgs {
+    local_addr: "10.125.0.1".parse().unwrap(),
+    remote_addr: "10.125.0.2".parse().unwrap(),
+    local_ports: vec![9000, 9001, 9002, 9003],
+    remote_ports: vec![9003, 9002, 9001, 9000],
+    stderr_file: Some("/tmp/brt_server_log.txt".into()),
+  };
+
+  let tunnel_args = TunnelArgs {
+    config_item: vec![
+      "tun-fd={inside}".to_string(),
+      "tx-sock-fd={fd0}".to_string(),
+      "feedback-tx-sock-fd={fd1}".to_string(),
+      "feedback-rx-sock-fd={fd2}".to_string(),
+      "rx-sock-fd={fd3}".to_string(),
+    ],
+    ..Default::default()
+  };
+
+  let factory = BitRippleCodecFactory::new(inserter_args, tunnel_args);
+
   let config = ServerConfig {
     mode,
     auth,
@@ -174,44 +195,7 @@ async fn main() -> Result<()> {
     key_update_interval: config.key_update_interval.into(),
     inside_plugins: Default::default(),
     outside_plugins: Default::default(),
-    inside_pkt_codec: Some(Box::new(BitRippleCodecFactory {
-      generic_insert_cmd: vec![
-        "../tunnel_inserter/result/bin/tunnel_inserter".to_string(),
-        "-o".to_string(),
-        "{outside}".to_string(),
-        "-c".to_string(),
-        "{control}".to_string(),
-        "--stderr-file".to_string(),
-        "/tmp/brt_server_log.txt".to_string(),
-        "--local-addr".to_string(),
-        "10.125.0.1".to_string(),
-        "--remote-addr".to_string(),
-        "10.125.0.2".to_string(),
-        "--local-ports".to_string(),
-        "9000".to_string(),
-        "9001".to_string(),
-        "9002".to_string(),
-        "9003".to_string(),
-        "--remote-ports".to_string(),
-        "9003".to_string(),
-        "9002".to_string(),
-        "9001".to_string(),
-        "9000".to_string(),
-        "--".to_string(),
-        // "../Axl/result/bin/bitripple_tunnel".to_string(),
-        "../AxlRust/result/bin/axlrust-main".to_string(),
-        "-x".to_string(),
-        "tun-fd={inside}".to_string(),
-        "-x".to_string(),
-        "tx-sock-fd={fd0}".to_string(),
-        "-x".to_string(),
-        "feedback-tx-sock-fd={fd1}".to_string(),
-        "-x".to_string(),
-        "feedback-rx-sock-fd={fd2}".to_string(),
-        "-x".to_string(),
-        "rx-sock-fd={fd3}".to_string(),
-      ],
-    })),
+    inside_pkt_codec: Some(Box::new(factory)),
     bind_address: config.bind_address,
     proxy_protocol: config.proxy_protocol,
     udp_buffer_size: config.udp_buffer_size,
