@@ -1,19 +1,18 @@
-use std::sync::Arc;
 use bytes::BytesMut;
-use lightway_app_utils::{PacketCodec as LWPacketCodec, PacketCodecFactory as LWPacketCodecFactory};
+use lightway_app_utils::{
+    PacketCodec as LWPacketCodec, PacketCodecFactory as LWPacketCodecFactory,
+};
 use lightway_core::{CodecStatus, PacketCodecResult, PacketDecoder, PacketEncoder};
+use std::sync::Arc;
 
+use lightway_bitripple_plugin::encoder::PacketCodecFactory as BrPacketCodecFactory;
 use lightway_bitripple_plugin::encoder::{
-    BitRippleCodecFactory as InnerFactory,
-    PacketCodecFactory as BRPacketCodecFactory,
-    PacketCodec as BRPacketCodec,
-    PacketDecoderType,
-    PacketEncoderType,
-    TunnelArgs,
-    TunnelInserterArgs,
+    BitRippleCodecFactory as InnerFactory, CodecStatus as BrCodecStatus,
+    PacketCodec as BRPacketCodec, PacketDecoderType, PacketEncoderType,
 };
 
-pub use lightway_bitripple_plugin::encoder::{TunnelArgs, TunnelInserterArgs};
+pub use lightway_bitripple_plugin::axl_rust::TunnelArgs;
+pub use lightway_bitripple_plugin::encoder::TunnelInserterArgs;
 
 /// Wrapper that adapts `BitRippleCodecFactory` to the Lightway `PacketCodecFactory` trait.
 pub struct BitRippleCodecFactory {
@@ -37,7 +36,10 @@ struct DecoderWrapper {
 
 impl PacketEncoder for EncoderWrapper {
     fn store(&self, data: &mut BytesMut) -> PacketCodecResult<CodecStatus> {
-        self.inner.store(data)
+        match self.inner.store(data)? {
+            BrCodecStatus::PacketAccepted => Ok(CodecStatus::PacketAccepted),
+            BrCodecStatus::SkipPacket => Ok(CodecStatus::SkipPacket),
+        }
     }
 
     fn get_encoding_state(&self) -> bool {
@@ -51,7 +53,10 @@ impl PacketEncoder for EncoderWrapper {
 
 impl PacketDecoder for DecoderWrapper {
     fn store(&self, data: &mut BytesMut) -> PacketCodecResult<CodecStatus> {
-        self.inner.store(data)
+        match self.inner.store(data)? {
+            BrCodecStatus::PacketAccepted => Ok(CodecStatus::PacketAccepted),
+            BrCodecStatus::SkipPacket => Ok(CodecStatus::SkipPacket),
+        }
     }
 }
 
@@ -60,8 +65,12 @@ impl LWPacketCodecFactory for BitRippleCodecFactory {
         let codec: BRPacketCodec = self.inner.build();
 
         LWPacketCodec {
-            encoder: Arc::new(EncoderWrapper { inner: codec.encoder }),
-            decoder: Arc::new(DecoderWrapper { inner: codec.decoder }),
+            encoder: Arc::new(EncoderWrapper {
+                inner: codec.encoder,
+            }),
+            decoder: Arc::new(DecoderWrapper {
+                inner: codec.decoder,
+            }),
             encoded_pkt_receiver: codec.encoded_pkt_receiver,
             decoded_pkt_receiver: codec.decoded_pkt_receiver,
         }
