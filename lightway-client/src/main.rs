@@ -9,11 +9,11 @@ use clap::CommandFactory;
 use lightway_core::{Event, EventCallback};
 use twelf::Layer;
 
+use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs, TunnelInserterArgs};
 use lightway_app_utils::{
   TunConfig, Validate, args::ConnectionType, validate_configuration_file_path,
 };
 use lightway_client::{io::inside::InsideIO, *};
-use xv_bitripple::{BitRippleCodecFactory, TunnelArgs, TunnelInserterArgs};
 mod args;
 use args::Config;
 

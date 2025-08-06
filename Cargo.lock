@@ -230,6 +230,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b8e56985ec62d17e9c1001dc89c88ecd7dc08e47eba5ec7c29c7b5eeecde967"
 
 [[package]]
+name = "bitripple_factory_thin_wrapper"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "lightway-app-utils",
+ "lightway-core",
+ "lightway_bitripple_plugin",
+ "nix 0.29.0",
+ "rand 0.9.1",
+ "thiserror 2.0.12",
+ "tokio",
+]
+
+[[package]]
 name = "block-buffer"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -614,7 +629,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8ea84d0109517cc2253d4a679bdda1e8989e9bd86987e9e4f75ffdda0095fd1"
 dependencies = [
  "derive-deftly-macros",
- "heck 0.5.0",
+ "heck 0.4.1",
 ]
 
 [[package]]
@@ -623,8 +638,8 @@ version = "0.14.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "357422a457ccb850dc8f1c1680e0670079560feaad6c2e247e3f345c4fab8a3f"
 dependencies = [
- "heck 0.5.0",
- "indexmap 2.10.0",
+ "heck 0.4.1",
+ "indexmap 1.9.3",
  "itertools 0.14.0",
  "proc-macro-crate",
  "proc-macro2",
@@ -1264,6 +1279,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "bitripple_factory_thin_wrapper",
  "bytes",
  "bytesize",
  "clap",
@@ -1288,7 +1304,6 @@ dependencies = [
  "tracing-subscriber",
  "tun",
  "twelf",
- "xv-bitripple",
 ]
 
 [[package]]
@@ -1335,6 +1350,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "average",
+ "bitripple_factory_thin_wrapper",
  "bytes",
  "bytesize",
  "clap",
@@ -1367,13 +1383,12 @@ dependencies = [
  "tracing-log",
  "tracing-subscriber",
  "twelf",
- "xv-bitripple",
 ]
 
 [[package]]
 name = "lightway_bitripple_plugin"
 version = "0.1.0"
-source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git#f35602296768a4b06722f9c0a51e577f5ae15d32"
+source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git#e5178a04486d0387432cede3fe45a2881b024257"
 dependencies = [
  "bindgen",
  "bytes",
@@ -3277,21 +3292,6 @@ dependencies = [
  "autotools",
  "bindgen",
  "build-target",
-]
-
-[[package]]
-name = "xv-bitripple"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bytes",
- "lightway-app-utils",
- "lightway-core",
- "lightway_bitripple_plugin",
- "nix 0.29.0",
- "rand 0.9.2",
- "thiserror 2.0.12",
- "tokio",
 ]
 
 [[package]]

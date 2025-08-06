@@ -10,7 +10,7 @@ license.workspace = true
 
 [features]
 default = ["postquantum"]
-debug = ["lightway-core/debug","lightway-app-utils/debug"]
+debug = ["lightway-core/debug", "lightway-app-utils/debug"]
 io-uring = ["lightway-app-utils/io-uring"]
 postquantum = ["lightway-core/postquantum"]
 kyber_only = ["postquantum", "lightway-core/kyber_only"]
@@ -38,9 +38,9 @@ tokio.workspace = true
 tokio-stream = { workspace = true, features = ["time"] }
 tokio-util.workspace = true
 tracing.workspace = true
-tracing-subscriber = { workspace = true}
+tracing-subscriber = { workspace = true }
 twelf.workspace = true
-xv-bitripple.workspace = true
+bitripple_factory_thin_wrapper.workspace = true
 
 [dev-dependencies]
 more-asserts.workspace = true

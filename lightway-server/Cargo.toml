@@ -10,7 +10,7 @@ license.workspace = true
 
 [features]
 default = []
-debug = ["lightway-core/debug","lightway-app-utils/debug"]
+debug = ["lightway-core/debug", "lightway-app-utils/debug"]
 io-uring = ["lightway-app-utils/io-uring"]
 
 [lints]
@@ -50,7 +50,7 @@ tracing.workspace = true
 tracing-log = "0.2.0"
 tracing-subscriber = { workspace = true, features = ["json"] }
 twelf.workspace = true
-xv-bitripple.workspace = true
+bitripple_factory_thin_wrapper.workspace = true
 
 [dev-dependencies]
 more-asserts.workspace = true

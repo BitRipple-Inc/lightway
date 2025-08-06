@@ -1,5 +1,5 @@
 [package]
-name = "xv-bitripple"
+name = "bitripple_factory_thin_wrapper"
 version = "0.1.0"
 edition.workspace = true
 publish = false

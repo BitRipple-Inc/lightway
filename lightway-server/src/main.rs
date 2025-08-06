@@ -12,13 +12,13 @@ use tracing::{error, trace};
 use twelf::Layer;
 
 use args::Config;
+use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs, TunnelInserterArgs};
 #[cfg(feature = "debug")]
 use lightway_app_utils::wolfssl_tracing_callback;
 use lightway_app_utils::{TunConfig, Validate, validate_configuration_file_path};
 #[cfg(feature = "debug")]
 use lightway_core::set_logging_callback;
 use lightway_server::*;
-use xv_bitripple::{BitRippleCodecFactory, TunnelArgs, TunnelInserterArgs};
 
 async fn metrics_debug() {
   if !tracing::enabled!(tracing::Level::TRACE) {
