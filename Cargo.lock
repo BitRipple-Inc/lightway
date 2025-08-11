@@ -1388,7 +1388,7 @@ dependencies = [
 [[package]]
 name = "lightway_bitripple_plugin"
 version = "0.1.0"
-source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git#e5178a04486d0387432cede3fe45a2881b024257"
+source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?branch=mem_tun#2c82308c4bed72755144af52daaa331619c3380d"
 dependencies = [
  "bindgen",
  "bytes",
