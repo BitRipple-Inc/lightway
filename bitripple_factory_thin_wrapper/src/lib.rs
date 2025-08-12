@@ -4,7 +4,6 @@ use lightway_app_utils::{
 };
 pub use lightway_bitripple_plugin::axl_rust::TunnelArgs;
 use lightway_bitripple_plugin::encoder::PacketCodecFactory as BrPacketCodecFactory;
-pub use lightway_bitripple_plugin::encoder::TunnelInserterArgs;
 use lightway_bitripple_plugin::encoder::{
   BitRippleCodecFactory as InnerFactory, CodecStatus as BrCodecStatus,
   PacketCodec as BRPacketCodec, PacketDecoderType, PacketEncoderType,
@@ -18,8 +17,8 @@ pub struct BitRippleCodecFactory {
 }
 
 impl BitRippleCodecFactory {
-  pub fn new(inserter_args: TunnelInserterArgs, tunnel_args: TunnelArgs) -> Self {
-    let inner = InnerFactory::new(inserter_args, tunnel_args);
+  pub fn new(tunnel_args: TunnelArgs) -> Self {
+    let inner = InnerFactory::new(tunnel_args);
     Self { inner }
   }
 }

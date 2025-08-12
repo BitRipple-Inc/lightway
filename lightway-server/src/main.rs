@@ -12,7 +12,7 @@ use tracing::{error, trace};
 use twelf::Layer;
 
 use args::Config;
-use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs, TunnelInserterArgs};
+use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs};
 #[cfg(feature = "debug")]
 use lightway_app_utils::wolfssl_tracing_callback;
 use lightway_app_utils::{TunConfig, Validate, validate_configuration_file_path};
@@ -150,14 +150,6 @@ async fn main() -> Result<()> {
     lightway_app_utils::args::ConnectionType::Tcp => ServerConnectionMode::Stream(None),
   };
 
-  let inserter_args = TunnelInserterArgs {
-    local_addr: "10.125.0.1".parse().unwrap(),
-    remote_addr: "10.125.0.2".parse().unwrap(),
-    local_ports: vec![9000, 9001, 9002, 9003],
-    remote_ports: vec![9003, 9002, 9001, 9000],
-    stderr_file: Some("/tmp/brt_server_log.txt".into()),
-  };
-
   let tunnel_args = TunnelArgs {
     config_item: vec![
       // "tun-fd={inside}".to_string(),
@@ -170,7 +162,7 @@ async fn main() -> Result<()> {
     ..Default::default()
   };
 
-  let factory = BitRippleCodecFactory::new(inserter_args, tunnel_args);
+  let factory = BitRippleCodecFactory::new(tunnel_args);
 
   let config = ServerConfig {
     mode,

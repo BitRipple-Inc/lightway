@@ -9,7 +9,7 @@ use clap::CommandFactory;
 use lightway_core::{Event, EventCallback};
 use twelf::Layer;
 
-use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs, TunnelInserterArgs};
+use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs};
 use lightway_app_utils::{
   TunConfig, Validate, args::ConnectionType, validate_configuration_file_path,
 };
@@ -91,14 +91,6 @@ async fn main() -> Result<()> {
     .next()
     .ok_or_else(|| anyhow!("No addresses resolved for server: {}", config.server))?;
 
-  let inserter_args = TunnelInserterArgs {
-    local_addr: "10.125.0.2".parse().unwrap(),
-    remote_addr: "10.125.0.1".parse().unwrap(),
-    local_ports: vec![9000, 9001, 9002, 9003],
-    remote_ports: vec![9003, 9002, 9001, 9000],
-    stderr_file: Some("/tmp/brt_client_log.txt".into()),
-  };
-
   let tunnel_args = TunnelArgs {
     config_item: vec![
       // "tun-fd={inside}".to_string(),
@@ -112,7 +104,7 @@ async fn main() -> Result<()> {
     ..Default::default()
   };
 
-  let factory = BitRippleCodecFactory::new(inserter_args, tunnel_args);
+  let factory = BitRippleCodecFactory::new(tunnel_args);
 
   let (_, encoding_request_rx) = tokio::sync::mpsc::channel::<bool>(1); // TODO: Check implications
   let config = ClientConfig {
