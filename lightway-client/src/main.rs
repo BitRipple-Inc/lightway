@@ -92,15 +92,7 @@ async fn main() -> Result<()> {
     .ok_or_else(|| anyhow!("No addresses resolved for server: {}", config.server))?;
 
   let tunnel_args = TunnelArgs {
-    config_item: vec![
-      // "tun-fd={inside}".to_string(),
-      // "tx-sock-fd={fd0}".to_string(),
-      // "feedback-tx-sock-fd={fd1}".to_string(),
-      // "feedback-rx-sock-fd={fd2}".to_string(),
-      // "rx-sock-fd={fd3}".to_string(),
-      // "log-filter=StreamObserver~10:~30".to_string(),
-      "log-filter=~11".to_string(),
-    ],
+    config_item: vec!["log-filter=~30".to_string()],
     ..Default::default()
   };
 
