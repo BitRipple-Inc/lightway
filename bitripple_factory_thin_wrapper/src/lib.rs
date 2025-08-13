@@ -59,7 +59,7 @@ impl PacketDecoder for DecoderWrapper {
 
 impl LWPacketCodecFactory for BitRippleCodecFactory {
   fn build(&self) -> LWPacketCodec {
-    let codec: BRPacketCodec = self.inner.build();
+    let codec: BRPacketCodec = self.inner.build().expect("BitRipple Codec Failed to Build");
     LWPacketCodec {
       encoder: Arc::new(EncoderWrapper {
         inner: codec.encoder,
