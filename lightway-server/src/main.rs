@@ -151,7 +151,7 @@ async fn main() -> Result<()> {
   };
 
   let tunnel_args = TunnelArgs {
-    config_item: vec!["log-filter=~30".to_string()],
+    config_item: vec!["log-filter=~50".to_string()],
     ..Default::default()
   };
 
