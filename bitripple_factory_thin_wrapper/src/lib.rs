@@ -3,8 +3,8 @@ use lightway_app_utils::{
   PacketCodec as LWPacketCodec, PacketCodecFactory as LWPacketCodecFactory,
 };
 pub use lightway_bitripple_plugin::axl_rust::TunnelArgs;
-use lightway_bitripple_plugin::encoder::PacketCodecFactory as BrPacketCodecFactory;
-use lightway_bitripple_plugin::encoder::{
+use lightway_bitripple_plugin::codec::PacketCodecFactory as BrPacketCodecFactory;
+use lightway_bitripple_plugin::codec::{
   BitRippleCodecFactory as InnerFactory, CodecStatus as BrCodecStatus,
   PacketCodec as BRPacketCodec, PacketDecoderType, PacketEncoderType,
 };

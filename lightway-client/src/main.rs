@@ -88,13 +88,13 @@ async fn main() -> Result<()> {
     .ok_or_else(|| anyhow!("No addresses resolved for server: {}", config.server))?;
 
   let tunnel_args = TunnelArgs {
-    config_item: vec!["log-filter=~50".to_string()],
+    config_item: vec!["log-filter=TunnelEgress~10".to_string()],
     ..Default::default()
   };
 
   let factory = BitRippleCodecFactory::new(tunnel_args);
 
-  let (_, encoding_request_rx) = tokio::sync::mpsc::channel::<bool>(1); // TODO: Check implications
+  let (_, encoding_request_rx) = tokio::sync::mpsc::channel::<bool>(1);
   let config = ClientConfig {
     mode,
     auth,
@@ -133,7 +133,9 @@ async fn main() -> Result<()> {
     server: server_addr,
     inside_plugins: Default::default(),
     outside_plugins: Default::default(),
+    // inside_pkt_codec: None,
     inside_pkt_codec: Some(Box::new(factory)),
+    // inside_pkt_codec_config: None,
     inside_pkt_codec_config: Some(ClientInsidePacketCodecConfig {
       enable_encoding_at_connect: true,
       encoding_request_signal: encoding_request_rx,
