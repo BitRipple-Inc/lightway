@@ -239,7 +239,7 @@ dependencies = [
  "lightway-core",
  "lightway_bitripple_plugin",
  "nix 0.29.0",
- "rand 0.9.1",
+ "rand 0.9.2",
  "thiserror 2.0.12",
  "tokio",
 ]
@@ -1388,12 +1388,13 @@ dependencies = [
 [[package]]
 name = "lightway_bitripple_plugin"
 version = "0.1.0"
-source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git#e5178a04486d0387432cede3fe45a2881b024257"
+source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?branch=pre_mem_tun#36d9261950e6e27341560db426c6685dcd7354a2"
 dependencies = [
  "bindgen",
  "bytes",
  "cc",
  "clap",
+ "futures",
  "libc",
  "log",
  "nix 0.29.0",

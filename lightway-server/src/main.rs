@@ -160,6 +160,7 @@ async fn main() -> Result<()> {
 
   let tunnel_args = TunnelArgs {
     config_item: vec![
+      "tun-dev-driver=fd".to_string(),
       "tun-fd={inside}".to_string(),
       "tx-sock-fd={fd0}".to_string(),
       "feedback-tx-sock-fd={fd1}".to_string(),
