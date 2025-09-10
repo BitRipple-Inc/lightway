@@ -12,7 +12,7 @@ bytes.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 nix = { version = "0.29.0", features = ["poll", "socket", "fs"] }
-lightway_bitripple_plugin = { git = "ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git", branch = "feat/performance_improvements" }
+lightway_bitripple_plugin = { git = "ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git", tag = "v0.2.1"}
 
 
 [dev-dependencies]

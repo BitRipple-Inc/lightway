@@ -88,7 +88,10 @@ async fn main() -> Result<()> {
     .ok_or_else(|| anyhow!("No addresses resolved for server: {}", config.server))?;
 
   let tunnel_args = TunnelArgs {
-    config_item: vec!["log-filter=TunnelEgress~10".to_string()],
+    config_item: vec![
+      "log-filter=TunnelEgress~10".to_string(),
+      "fb-engine-block-abandon-time-ms-auto=0".to_string(),
+    ],
     ..Default::default()
   };
 
