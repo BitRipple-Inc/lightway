@@ -91,6 +91,8 @@ async fn main() -> Result<()> {
     config_item: vec![
       "log-filter=TunnelEgress~10".to_string(),
       "fb-engine-block-abandon-time-ms-auto=0".to_string(),
+      "thread-pool-worker-count=4".to_string(),
+      "tun-threaded=1".to_string(),
     ],
     ..Default::default()
   };
