@@ -231,7 +231,7 @@ checksum = "1b8e56985ec62d17e9c1001dc89c88ecd7dc08e47eba5ec7c29c7b5eeecde967"
 
 [[package]]
 name = "bitripple_factory_thin_wrapper"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "anyhow",
  "bytes",
@@ -680,7 +680,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "357422a457ccb850dc8f1c1680e0670079560feaad6c2e247e3f345c4fab8a3f"
 dependencies = [
  "heck 0.5.0",
- "indexmap 1.9.3",
+ "indexmap 2.10.0",
  "itertools 0.14.0",
  "proc-macro-crate",
  "proc-macro2",
@@ -1434,8 +1434,8 @@ dependencies = [
 
 [[package]]
 name = "lightway_bitripple_plugin"
-version = "0.3.0"
-source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?tag=v0.3.0#56659bee66d380210e57cf52d8cc408da5a7b76c"
+version = "0.3.1"
+source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?tag=v0.3.1#68a30ffad31bf68984457d4c371d50c228178a79"
 dependencies = [
  "bindgen",
  "bytes",
