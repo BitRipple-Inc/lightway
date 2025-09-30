@@ -11,11 +11,11 @@ use tokio_stream::StreamExt;
 use tracing::{error, trace};
 use twelf::Layer;
 
-use args::Config;
-use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs};
+use args::{Config, CodecConfig};
+use bitripple_factory_thin_wrapper::BitRippleCodecFactory;
 #[cfg(feature = "debug")]
 use lightway_app_utils::wolfssl_tracing_callback;
-use lightway_app_utils::{TunConfig, Validate, validate_configuration_file_path};
+use lightway_app_utils::{PacketCodecFactoryType, TunConfig, Validate, validate_configuration_file_path};
 #[cfg(feature = "debug")]
 use lightway_core::set_logging_callback;
 use lightway_server::*;
@@ -71,6 +71,15 @@ async fn metrics_debug() {
           )
         }
       };
+    }
+  }
+}
+
+fn create_codec_factory(codec_config: &CodecConfig) -> PacketCodecFactoryType {
+  match codec_config {
+    CodecConfig::BitRipple { tunnel_args } => {
+      let factory = BitRippleCodecFactory::new(tunnel_args.clone());
+      Box::new(factory)
     }
   }
 }
@@ -159,17 +168,7 @@ async fn main() -> Result<()> {
     lightway_app_utils::args::ConnectionType::Tcp => ServerConnectionMode::Stream(None),
   };
 
-  let tunnel_args = TunnelArgs {
-    config_item: vec![
-      "log-filter=TunnelEgress~10".to_string(),
-      "fb-engine-block-abandon-time-ms-auto=0".to_string(),
-      "thread-pool-worker-count=4".to_string(),
-      "tun-threaded=1".to_string(),
-    ],
-    ..Default::default()
-  };
-
-  let factory = BitRippleCodecFactory::new(tunnel_args);
+  let inside_pkt_codec = config.inside_pkt_codec.as_ref().map(create_codec_factory);
 
   let config = ServerConfig {
     mode,
@@ -196,7 +195,7 @@ async fn main() -> Result<()> {
     key_update_interval: config.key_update_interval.into(),
     inside_plugins: Default::default(),
     outside_plugins: Default::default(),
-    inside_pkt_codec: Some(Box::new(factory)),
+    inside_pkt_codec,
     bind_address: config.bind_address,
     proxy_protocol: config.proxy_protocol,
     udp_buffer_size: config.udp_buffer_size,
