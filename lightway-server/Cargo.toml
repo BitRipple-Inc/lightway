@@ -50,6 +50,7 @@ tracing.workspace = true
 tracing-log = "0.2.0"
 tracing-subscriber = { workspace = true, features = ["json", "env-filter"] }
 twelf.workspace = true
+bitripple_factory_thin_wrapper.workspace = true
 
 [dev-dependencies]
 more-asserts.workspace = true

@@ -40,6 +40,7 @@ tokio-util.workspace = true
 tracing = { workspace = true, features = ["attributes"] }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 twelf.workspace = true
+bitripple_factory_thin_wrapper.workspace = true
 
 [dev-dependencies]
 more-asserts.workspace = true

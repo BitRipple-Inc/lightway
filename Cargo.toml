@@ -5,6 +5,7 @@ members = [
     "lightway-app-utils",
     "lightway-client",
     "lightway-server",
+    "bitripple_factory_thin_wrapper",
 ]
 
 exclude = [
@@ -48,6 +49,8 @@ ipnet = { version = "2.8.0", features = ["serde"]}
 libc = "0.2.152"
 lightway-app-utils = { path = "./lightway-app-utils" }
 lightway-core = { path = "./lightway-core" }
+lightway-server = { path = "./lightway-server" }
+bitripple_factory_thin_wrapper = { path = "./bitripple_factory_thin_wrapper" }
 metrics = "0.24.0"
 more-asserts = "0.3.1"
 parking_lot = { version = "0.12.3", features = ["deadlock_detection"] }
