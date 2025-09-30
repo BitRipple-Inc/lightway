@@ -23,3 +23,19 @@ enable_pmtud: false
 # rcvbuf: 1.5 MiB
 route_mode: default
 dns_config_mode: noexec
+
+# Server configurations with codec support
+servers:
+  - server: 172.16.0.1:27690
+    mode: udp
+    server_dn: goaway.com
+    cipher: aes256
+    inside_pkt_codec:
+      type: bitripple
+      tunnel_args:
+        config_item:
+          - "log-filter=TunnelEgress~60"
+          - "fb-engine-block-abandon-time-ms-auto=0"
+          - "thread-pool-worker-count=4"
+          - "tun-threaded=1"
+        channel_mode: "Unbounded"
