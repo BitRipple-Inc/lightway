@@ -9,6 +9,17 @@ use ipnet::Ipv4Net;
 use twelf::config;
 
 use lightway_app_utils::args::{ConnectionType, Duration, IpMap, LogFormat, LogLevel};
+use bitripple_factory_thin_wrapper::TunnelArgs;
+use serde::{Serialize, Deserialize};
+
+/// Codec configuration for inside packet encoding
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CodecConfig {
+    /// BitRipple codec with tunnel arguments
+    #[serde(rename = "bitripple")]
+    BitRipple { tunnel_args: TunnelArgs },
+}
 
 #[config]
 #[derive(Parser, Debug)]
@@ -121,4 +132,9 @@ pub struct Config {
     #[cfg(feature = "debug")]
     #[clap(long, default_value_t = true)]
     pub randomize_ippool: bool,
+
+    /// Inside packet codec configuration
+    #[clap(skip)]
+    #[serde(default)]
+    pub inside_pkt_codec: Option<CodecConfig>,
 }
