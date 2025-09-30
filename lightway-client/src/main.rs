@@ -1,8 +1,4 @@
-use std::{
-  net::{SocketAddr, ToSocketAddrs},
-  path::PathBuf,
-  sync::Arc,
-};
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 
 use anyhow::{Context, Result, anyhow};
 use clap::CommandFactory;
@@ -10,7 +6,8 @@ use futures::future::join_all;
 use lightway_core::{Event, EventCallback};
 use twelf::Layer;
 
-use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs};
+use bitripple_factory_thin_wrapper::BitRippleCodecFactory;
+use lightway_app_utils::PacketCodecFactoryType;
 use lightway_app_utils::{
   TunConfig, Validate,
   args::{ConnectionType, LogFormat},
@@ -18,7 +15,7 @@ use lightway_app_utils::{
 };
 use lightway_client::{io::inside::InsideIO, *};
 mod args;
-use args::Config;
+use args::{CodecConfig, Config};
 
 use crate::args::ConnectionConfig;
 
@@ -38,6 +35,15 @@ impl EventCallback for EventHandler {
   }
 }
 
+fn create_codec_factory(codec_config: &CodecConfig) -> PacketCodecFactoryType {
+  match codec_config {
+    CodecConfig::BitRipple { tunnel_args } => {
+      let factory = BitRippleCodecFactory::new(tunnel_args.clone());
+      Box::new(factory)
+    }
+  }
+}
+
 async fn make_client_connection_config(
   config: ConnectionConfig,
 ) -> Result<ClientConnectionConfig<EventHandler>> {
@@ -53,6 +59,8 @@ async fn make_client_connection_config(
     ConnectionType::Udp => ClientConnectionMode::Datagram(None),
   };
 
+  let inside_pkt_codec = config.inside_pkt_codec.as_ref().map(create_codec_factory);
+
   Ok(ClientConnectionConfig {
     mode,
     cipher: config.cipher,
@@ -60,7 +68,7 @@ async fn make_client_connection_config(
     server: server_addr,
     inside_plugins: Default::default(),
     outside_plugins: Default::default(),
-    inside_pkt_codec: None,
+    inside_pkt_codec,
     event_handler: Some(EventHandler),
   })
 }
@@ -137,6 +145,7 @@ async fn main() -> Result<()> {
       mode: config.mode,
       server_dn: config.server_dn,
       cipher: config.cipher,
+      inside_pkt_codec: None,
     }]
   } else {
     config.servers
@@ -157,18 +166,6 @@ async fn main() -> Result<()> {
           std::process::exit(0);
       }
   };
-
-  let tunnel_args = TunnelArgs {
-    config_item: vec![
-      "log-filter=TunnelEgress~60".to_string(),
-      "fb-engine-block-abandon-time-ms-auto=0".to_string(),
-      "thread-pool-worker-count=4".to_string(),
-      "tun-threaded=1".to_string(),
-    ],
-    ..Default::default()
-  };
-
-  let factory = BitRippleCodecFactory::new(tunnel_args);
 
   let (_, encoding_request_rx) = tokio::sync::mpsc::channel::<bool>(1);
   let config = ClientConfig {
@@ -203,7 +200,6 @@ async fn main() -> Result<()> {
     iouring_entry_count: config.iouring_entry_count,
     #[cfg(feature = "io-uring")]
     iouring_sqpoll_idle_time: config.iouring_sqpoll_idle_time.into(),
-    inside_pkt_codec: Some(Box::new(factory)),
     inside_pkt_codec_config: Some(ClientInsidePacketCodecConfig {
       enable_encoding_at_connect: true,
       encoding_request_signal: encoding_request_rx,

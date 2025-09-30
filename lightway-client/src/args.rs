@@ -5,9 +5,10 @@ use bytesize::ByteSize;
 use clap::Parser;
 use lightway_app_utils::args::{Cipher, ConnectionType, Duration, LogLevel, NonZeroDuration};
 use lightway_core::{AuthMethod, MAX_OUTSIDE_MTU};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::{net::Ipv4Addr, path::PathBuf};
 use twelf::config;
+use bitripple_factory_thin_wrapper::TunnelArgs;
 
 #[config]
 #[derive(Parser, Debug)]
@@ -194,6 +195,15 @@ impl Config {
     }
 }
 
+/// Codec configuration for inside packet encoding
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CodecConfig {
+    /// BitRipple codec with tunnel arguments
+    #[serde(rename = "bitripple")]
+    BitRipple { tunnel_args: TunnelArgs },
+}
+
 #[config]
 #[derive(Parser, Debug, Serialize)]
 pub struct ConnectionConfig {
@@ -211,6 +221,11 @@ pub struct ConnectionConfig {
     /// Cipher to use for encryption
     #[serde(default)]
     pub cipher: Cipher,
+
+    /// Inside packet codec configuration
+    #[clap(skip)]
+    #[serde(default)]
+    pub inside_pkt_codec: Option<CodecConfig>,
 }
 
 #[cfg(test)]
