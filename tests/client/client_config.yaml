@@ -39,3 +39,4 @@ servers:
           - "thread-pool-worker-count=4"
           - "tun-threaded=1"
         channel_mode: "Unbounded"
+        encoder_backlog_capacity: 2048
