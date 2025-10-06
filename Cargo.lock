@@ -242,7 +242,7 @@ checksum = "2261d10cca569e4643e526d8dc2e62e433cc8aba21ab764233731f8d369bf394"
 
 [[package]]
 name = "bitripple_factory_thin_wrapper"
-version = "0.3.1"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1702,8 +1702,8 @@ dependencies = [
 
 [[package]]
 name = "lightway_bitripple_plugin"
-version = "0.3.1"
-source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?tag=v0.3.1#68a30ffad31bf68984457d4c371d50c228178a79"
+version = "1.0.0"
+source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?tag=v1.0.0#d17a402d972d3c5344feb38e23e2b6a9ebe8a370"
 dependencies = [
  "bindgen",
  "bytes",
@@ -1716,6 +1716,7 @@ dependencies = [
  "num_cpus",
  "once_cell",
  "pkg-config",
+ "serde",
  "thiserror 1.0.69",
  "tokio",
  "uuid",
