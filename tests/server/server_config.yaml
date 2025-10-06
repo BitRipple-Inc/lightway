@@ -31,7 +31,7 @@ inside_pkt_codec:
   type: bitripple
   tunnel_args:
     config_item:
-      - "log-filter=TunnelEgress~10"
+      - "log-filter=TunnelEgress~60"
       - "fb-engine-block-abandon-time-ms-auto=0"
       - "thread-pool-worker-count=4"
       - "tun-threaded=1"
