@@ -36,9 +36,10 @@ servers:
       type: bitripple
       tunnel_args:
         config_item:
-          - "log-filter=TunnelEgress~60"
+          - "log-filter=~60"
           - "fb-engine-block-abandon-time-ms-auto=0"
           - "thread-pool-worker-count=4"
           - "tun-threaded=1"
         channel_mode: "Unbounded"
         encoder_backlog_capacity: 2048
+        logging: off
