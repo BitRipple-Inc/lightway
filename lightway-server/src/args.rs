@@ -133,6 +133,26 @@ pub struct Config {
     #[clap(long, default_value_t = true)]
     pub randomize_ippool: bool,
 
+    /// Enable memory debug logging
+    #[cfg(all(feature = "debug", target_os = "linux"))]
+    #[clap(long, default_value_t = false)]
+    pub memory_debug_log_enabled: bool,
+
+    /// Memory debug logging destination file
+    #[cfg(all(feature = "debug", target_os = "linux"))]
+    #[clap(long, default_value = "./memory_debug_log.csv")]
+    pub memory_debug_log_destination_file: PathBuf,
+
+    /// Memory debug value divisor
+    #[cfg(all(feature = "debug", target_os = "linux"))]
+    #[clap(long, default_value_t = 1)]
+    pub memory_debug_log_divisor: usize,
+
+    /// Memory debug logging period, in seconds
+    #[cfg(all(feature = "debug", target_os = "linux"))]
+    #[clap(long, default_value_t = 5)]
+    pub memory_debug_log_period_in_seconds: u64,
+
     /// Inside packet codec configuration
     #[clap(skip)]
     #[serde(default)]
