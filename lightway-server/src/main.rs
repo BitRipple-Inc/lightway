@@ -75,6 +75,48 @@ async fn metrics_debug() {
   }
 }
 
+#[cfg(all(feature = "debug", target_os = "linux"))]
+#[allow(unsafe_code)]
+async fn log_malloc_info(destination_file_path: PathBuf, divisor: usize, logging_period_in_seconds: u64) {
+  use libc;
+  use tokio::fs::File;
+  use tokio::io::AsyncWriteExt;
+
+  let mut ticker = tokio::time::interval(std::time::Duration::from_secs(logging_period_in_seconds));
+  ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+  let mut ticker = tokio_stream::wrappers::IntervalStream::new(ticker);
+
+  let mut destination_file = File::create(destination_file_path)
+    .await
+    .expect("Failed to open memory debug log destination file");
+
+  destination_file.write_all("timestamp,arena,fordblks,uordblks,hblkhd\n".as_bytes())
+    .await
+    .expect("Failed to write header to memory debug log");
+
+  while ticker.next().await.is_some() {
+    // Excel does not seem to be able to parse the offset, so we use the UTC
+    // timestamp and make sure the offset is not printed by converting to the
+    // PrimitiveDateTime type.
+    let timestamp = time::OffsetDateTime::now_utc();
+    let timestamp_without_offset = time::PrimitiveDateTime::new(timestamp.date(), timestamp.time());
+
+    unsafe {
+      let mallinfo2 = libc::mallinfo2();
+      let message = format!("{},{},{},{},{}\n",
+        timestamp_without_offset,
+        mallinfo2.arena / divisor,
+        mallinfo2.fordblks / divisor,
+        mallinfo2.uordblks / divisor,
+        mallinfo2.hblkhd / divisor);
+
+      destination_file.write_all(message.as_bytes())
+        .await
+        .expect("Failed to write data to memory debug log");
+    }
+  }
+}
+
 fn create_codec_factory(codec_config: &CodecConfig) -> PacketCodecFactoryType {
   match codec_config {
     CodecConfig::BitRipple { tunnel_args } => {
@@ -130,6 +172,13 @@ async fn main() -> Result<()> {
   config.log_format.init_with_env_filter(fmt);
 
   tokio::spawn(metrics_debug());
+
+  #[cfg(all(feature = "debug", target_os = "linux"))]
+  if config.memory_debug_log_enabled {
+    tokio::spawn(log_malloc_info(config.memory_debug_log_destination_file,
+      config.memory_debug_log_divisor,
+      config.memory_debug_log_period_in_seconds));
+  }
 
   std::thread::spawn(move || {
     use parking_lot::deadlock;
