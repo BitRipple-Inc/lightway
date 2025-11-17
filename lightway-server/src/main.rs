@@ -77,7 +77,12 @@ async fn metrics_debug() {
 
 #[cfg(all(feature = "debug", target_os = "linux"))]
 #[allow(unsafe_code)]
-async fn log_malloc_info(destination_file_path: PathBuf, divisor: usize, logging_period_in_seconds: u64) {
+async fn log_malloc_info(
+  destination_file_path_prefix: String,
+  destination_file_path_suffix: String,
+  divisor: usize,
+  logging_period_in_seconds: u64
+) {
   use libc;
   use tokio::fs::File;
   use tokio::io::AsyncWriteExt;
@@ -85,6 +90,13 @@ async fn log_malloc_info(destination_file_path: PathBuf, divisor: usize, logging
   let mut ticker = tokio::time::interval(std::time::Duration::from_secs(logging_period_in_seconds));
   ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
   let mut ticker = tokio_stream::wrappers::IntervalStream::new(ticker);
+
+  let epoch_timestamp = time::OffsetDateTime::now_utc().unix_timestamp();
+  let destination_file_path = format!(
+    "{}{}{}",
+    destination_file_path_prefix,
+    epoch_timestamp,
+    destination_file_path_suffix);
 
   let mut destination_file = File::create(destination_file_path)
     .await
@@ -167,7 +179,8 @@ async fn main() -> Result<()> {
 
   #[cfg(all(feature = "debug", target_os = "linux"))]
   if config.memory_debug_log_enabled {
-    tokio::spawn(log_malloc_info(config.memory_debug_log_destination_file,
+    tokio::spawn(log_malloc_info(config.memory_debug_log_destination_file_prefix,
+      config.memory_debug_log_destination_file_suffix,
       config.memory_debug_log_divisor,
       config.memory_debug_log_period_in_seconds));
   }
