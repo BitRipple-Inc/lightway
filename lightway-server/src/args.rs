@@ -142,10 +142,18 @@ pub struct Config {
   #[clap(long, default_value_t = false)]
   pub memory_debug_log_enabled: bool,
 
-  /// Memory debug logging destination file
+  /// Memory debug logging destination file prefix
+  /// The full destination file name is "<prefix><epoch timestamp><suffix>"
+  /// For example, in the default configuration the file names will be:
+  /// "./memory_debug_log-<epoch timestamp>.csv"
   #[cfg(all(feature = "debug", target_os = "linux"))]
-  #[clap(long, default_value = "./memory_debug_log.csv")]
-  pub memory_debug_log_destination_file: PathBuf,
+  #[clap(long, default_value = "./memory_debug_log-")]
+  pub memory_debug_log_destination_file_prefix: String,
+
+  /// Memory debug logging destination file suffix
+  #[cfg(all(feature = "debug", target_os = "linux"))]
+  #[clap(long, default_value = ".csv")]
+  pub memory_debug_log_destination_file_suffix: String,
 
   /// Memory debug value divisor
   #[cfg(all(feature = "debug", target_os = "linux"))]
