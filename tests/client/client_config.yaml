@@ -36,10 +36,38 @@ servers:
       type: bitripple
       tunnel_args:
         config_item:
-          - "log-filter=~60"
-          - "fb-engine-block-abandon-time-ms-auto=0"
-          - "thread-pool-worker-count=4"
-          - "tun-threaded=1"
-        channel_mode: "Unbounded"
-        encoder_backlog_capacity: 2048
-        logging: off
+          - "log-filter=~30" # Axl logging filter
+          - "fb-engine-block-abandon-time-ms-auto=0" # Disable RTT-based auto tuning of block abandon time; rely on the static values instead.
+          - "thread-pool-worker-count=4" # Number of Axl worker threads to parallelize codec processing.
+          - "tun-threaded=1" # Use split facilities: separate ingress/egress threads (1 each) instead of a single shared thread.
+          - "tunnel-ingress-sa-bufsize=2048" # SA = StorageArea = Buffer to collect INCOMING inside packets; in bytes.
+                                             # defining `=auto` will constrain storage areas based on the tunnel MTU.
+          - "tunnel-ingress-sa-count=4" # How many SA per client. More SA = more simultaneous packet blocks before backpressure, but more memory
+          - "tunnel-ingress-max-ob-size=131072" # = Total memory to allow for PacketCollector 
+                                                # (part of Axl IngressChain which is after the memtun device per client)
+          - "tunnel-ingress-coll-count=2" # Concurrent collection pipelines. Minimum requirement is 2.
+                                          # Note: A Collection in Axl is a data structure that batches multiple network packet payloads into a single submission unit for more efficient processing through the packet engine.
+          - "rx-aggregator-inact-evict-ms=1000" # Time without new packets on a block before said block is "evicted",
+                                                # Evicted = Axl Aggregator stops retrying decoding, eventually releasing the symbol table sooner.
+                                                # Shorter values = More risk giving up on late repair packets, not decoding them, but less memory use
+          - "rx-aggregator-inact-forget-ms=2000" # After "evicted", the block is still tracked for this amount of time to ignore duplicates.
+                                                # Shorter vaues = More risk of late duplicates appearing, but less memory use.
+          - "encoder-mem-limit=2097152" # 2 MB
+          - "encoder-backlog-limit=4" # Default = 2
+          - "cb-accum-memblock-size=131072" # 128 * 1024 = 128 KiB
+          - "tunnel-block-timeout-ms=5" # Time window (ms) to keep collecting packets into a block when there is no backpressure.
+          - "tunnel-block-inactivity-timeout-ms=1" # Maximum collect time (ms) without new packets before finalizing a block early.
+          - "fb-packet-size=1280" # Maximum size for feedback packets; larger feedback is split across multiple packets.
+          - "packet-payload-size=1280" # Maximum payload bytes per data packet emitted by the encoder.
+          - "fb-engine-pover=0.1" # Feedback repair method linear term; scales repair count with block size (c * k).
+          - "fb-engine-sqfactor=0" # Feedback repair method square-root term; adds repair proportional to sqrt(block size).
+          - "fb-engine-nadd=0" # Feedback repair method constant term; fixed extra repair packets per block.
+        channel_mode:
+          Bounded:
+            capacity: 128
+      encoder_backlog_capacity: 128
+      inject_batch_budget: 16
+      egress_batch_budget: 16
+      codec_idle_teardown_ms: 10000
+      codec_idle_check_ms: 5000
+      logging: off
