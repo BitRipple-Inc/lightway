@@ -10,7 +10,7 @@ use crate::{
     metrics::{self, ConnectionIntervalStats},
 };
 
-const STATISTICS_REPORTING_INTERVAL: Duration = Duration::seconds(30);
+const STATISTICS_REPORTING_INTERVAL: Duration = Duration::seconds(10);
 
 const FIVE_MINUTES: Duration = Duration::minutes(5);
 const FIFTEEN_MINUTES: Duration = Duration::minutes(15);
