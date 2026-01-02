@@ -65,9 +65,9 @@ servers:
         channel_mode:
           Bounded:
             capacity: 128
-      encoder_backlog_capacity: 128
-      inject_batch_budget: 16
-      egress_batch_budget: 16
-      codec_idle_teardown_ms: 10000
-      codec_idle_check_ms: 5000
-      logging: off
+        encoder_backlog_capacity: 128
+        inject_batch_budget: 16
+        egress_batch_budget: 16
+        codec_idle_teardown_ms: 10000
+        codec_idle_check_ms: 5000
+        logging: off
