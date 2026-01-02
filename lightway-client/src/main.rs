@@ -184,7 +184,6 @@ async fn main() -> Result<()> {
     keepalive_timeout: config.keepalive_timeout.into(),
     continuous_keepalive: config.keepalive_continuous,
     tracer_packet_timeout: config.tracer_packet_timeout.into(),
-    continuous_keepalive: true,
     preferred_connection_wait_interval: config.preferred_connection_wait_interval.into(),
     sndbuf: config.sndbuf,
     rcvbuf: config.rcvbuf,

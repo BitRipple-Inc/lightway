@@ -9,7 +9,9 @@ use ipnet::Ipv4Net;
 use twelf::config;
 
 use bitripple_factory_thin_wrapper::TunnelArgs;
-use lightway_app_utils::args::{ConnectionType, Duration, IpMap, LogFormat, LogLevel};
+use lightway_app_utils::args::{
+  ConnectionType, Duration, IpMap, LogFormat, LogLevel, NonZeroDuration,
+};
 use serde::{Deserialize, Serialize};
 
 /// Codec configuration for inside packet encoding
