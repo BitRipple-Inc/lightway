@@ -140,7 +140,7 @@ pub struct Config {
   pub randomize_ippool: bool,
 
   /// Enable memory debug logging
-  #[cfg(all(feature = "debug", target_os = "linux"))]
+  #[cfg(target_os = "linux")]
   #[clap(long, default_value_t = false)]
   pub memory_debug_log_enabled: bool,
 
@@ -148,22 +148,22 @@ pub struct Config {
   /// The full destination file name is "<prefix><epoch timestamp><suffix>"
   /// For example, in the default configuration the file names will be:
   /// "./memory_debug_log-<epoch timestamp>.csv"
-  #[cfg(all(feature = "debug", target_os = "linux"))]
+  #[cfg(target_os = "linux")]
   #[clap(long, default_value = "./memory_debug_log-")]
   pub memory_debug_log_destination_file_prefix: String,
 
   /// Memory debug logging destination file suffix
-  #[cfg(all(feature = "debug", target_os = "linux"))]
+  #[cfg(target_os = "linux")]
   #[clap(long, default_value = ".csv")]
   pub memory_debug_log_destination_file_suffix: String,
 
   /// Memory debug value divisor
-  #[cfg(all(feature = "debug", target_os = "linux"))]
+  #[cfg(target_os = "linux")]
   #[clap(long, default_value_t = 1)]
   pub memory_debug_log_divisor: usize,
 
   /// Memory debug logging period, in seconds
-  #[cfg(all(feature = "debug", target_os = "linux"))]
+  #[cfg(target_os = "linux")]
   #[clap(long, default_value_t = 5)]
   pub memory_debug_log_period_in_seconds: u64,
 
