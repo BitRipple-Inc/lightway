@@ -75,7 +75,7 @@ async fn metrics_debug() {
   }
 }
 
-#[cfg(all(feature = "debug", target_os = "linux"))]
+#[cfg(target_os = "linux")]
 #[allow(unsafe_code)]
 async fn log_malloc_info(
   destination_file_path_prefix: String,
@@ -185,7 +185,7 @@ async fn main() -> Result<()> {
 
   tokio::spawn(metrics_debug());
 
-  #[cfg(all(feature = "debug", target_os = "linux"))]
+  #[cfg(target_os = "linux")]
   if config.memory_debug_log_enabled {
     tokio::spawn(log_malloc_info(config.memory_debug_log_destination_file_prefix,
       config.memory_debug_log_destination_file_suffix,
