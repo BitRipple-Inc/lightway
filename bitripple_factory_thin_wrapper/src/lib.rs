@@ -2,7 +2,7 @@ use bytes::BytesMut;
 use lightway_app_utils::{
   PacketCodec as LWPacketCodec, PacketCodecFactory as LWPacketCodecFactory,
 };
-pub use lightway_bitripple_plugin::axl_rust::TunnelArgs;
+pub use lightway_bitripple_plugin::config::TunnelArgs;
 use lightway_bitripple_plugin::codec::PacketCodecFactory as BrPacketCodecFactory;
 use lightway_bitripple_plugin::codec::{
   BitRippleCodecFactory as InnerFactory, CodecStatus as BrCodecStatus,
