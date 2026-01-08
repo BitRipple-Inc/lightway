@@ -63,6 +63,8 @@ inside_pkt_codec:
     encoder_backlog_capacity: 128
     inject_batch_budget: 16
     egress_batch_budget: 16
+    # When disabled, the BitRipple codec is never reclaimed due to idleness.
+    codec_idle_reclaimer_enabled: true
     codec_idle_teardown_ms: 10000
     codec_idle_check_ms: 5000
     logging: off
