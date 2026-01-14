@@ -1730,8 +1730,7 @@ dependencies = [
 
 [[package]]
 name = "lightway_bitripple_plugin"
-version = "1.0.6"
-source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?tag=v1.0.6#261205ad186c041c464ce3baebae110d0818c60e"
+version = "1.0.7"
 dependencies = [
  "bindgen",
  "bytes",
