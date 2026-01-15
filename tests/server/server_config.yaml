@@ -57,9 +57,7 @@ inside_pkt_codec:
       - "fb-engine-pover=0.1" # Feedback repair method linear term; scales repair count with block size (c * k).
       - "fb-engine-sqfactor=0" # Feedback repair method square-root term; adds repair proportional to sqrt(block size).
       - "fb-engine-nadd=0" # Feedback repair method constant term; fixed extra repair packets per block.
-    channel_mode: 
-      Bounded: 
-        capacity: 128
+    channel_mode: "Unbounded"
     encoder_backlog_capacity: 128
     inject_batch_budget: 16
     egress_batch_budget: 16
