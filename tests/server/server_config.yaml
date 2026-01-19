@@ -36,7 +36,7 @@ inside_pkt_codec:
       - "thread-pool-worker-count=4" # Number of Axl worker threads to parallelize codec processing.
       - "tun-threaded=1" # Use split facilities: separate ingress/egress threads (1 each) instead of a single shared thread.
       - "tunnel-ingress-sa-bufsize=2048" # SA = StorageArea = Buffer to collect INCOMING inside packets; in bytes.
-                                         # defining `=auto` will constrain storage areas based on the tunnel MTU.
+                                          # defining `=auto` will constrain storage areas based on the tunnel MTU.
       - "tunnel-ingress-sa-count=4" # How many SA per client. More SA = more simultaneous packet blocks before backpressure, but more memory
       - "tunnel-ingress-max-ob-size=131072" # = Total memory to allow for PacketCollector 
                                             # (part of Axl IngressChain which is after the memtun device per client)
@@ -46,8 +46,8 @@ inside_pkt_codec:
                                             # Evicted = Axl Aggregator stops retrying decoding, eventually releasing the symbol table sooner.
                                             # Shorter values = More risk giving up on late repair packets, not decoding them, but less memory use
       - "rx-aggregator-inact-forget-ms=2000" # After "evicted", the block is still tracked for this amount of time to ignore duplicates.
-                                             # Shorter vaues = More risk of late duplicates appearing, but less memory use.
-      - "encoder-mem-limit=2097152" # 2 MB
+                                            # Shorter vaues = More risk of late duplicates appearing, but less memory use.
+      - "encoder-mem-limit=268435456" # 256 MB
       - "encoder-backlog-limit=4" # Default = 2
       - "cb-accum-memblock-size=131072" # 128 * 1024 = 128 KiB
       - "tunnel-block-timeout-ms=5" # Time window (ms) to keep collecting packets into a block when there is no backpressure.
@@ -61,7 +61,6 @@ inside_pkt_codec:
     encoder_backlog_capacity: 128
     inject_batch_budget: 16
     egress_batch_budget: 16
-    # When disabled, the BitRipple codec is never reclaimed due to idleness.
     codec_idle_reclaimer_enabled: true
     codec_idle_teardown_ms: 10000
     codec_idle_check_ms: 5000
