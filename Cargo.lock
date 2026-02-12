@@ -248,13 +248,13 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 
 [[package]]
 name = "bitripple_factory_thin_wrapper"
-version = "1.0.6"
+version = "1.0.7"
 dependencies = [
  "anyhow",
  "bytes",
  "lightway-app-utils",
  "lightway-core",
- "lightway_bitripple_plugin",
+ "lt3_plugin",
  "nix 0.29.0",
  "rand 0.9.2",
  "thiserror 2.0.17",
@@ -1729,28 +1729,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lightway_bitripple_plugin"
-version = "1.0.7"
-dependencies = [
- "bindgen",
- "bytes",
- "cc",
- "crossbeam",
- "embed-doc-image",
- "futures",
- "libc",
- "log",
- "nix 0.29.0",
- "num_cpus",
- "once_cell",
- "pkg-config",
- "serde",
- "thiserror 1.0.69",
- "tokio",
- "uuid",
-]
-
-[[package]]
 name = "linked-hash-map"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1778,6 +1756,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96051b46fc183dc9cd4a223960ef37b9af631b55191852a8274bfef064cda20f"
 dependencies = [
  "hashbrown 0.16.1",
+]
+
+[[package]]
+name = "lt3_plugin"
+version = "1.0.8"
+dependencies = [
+ "bindgen",
+ "bytes",
+ "cc",
+ "crossbeam",
+ "embed-doc-image",
+ "futures",
+ "libc",
+ "log",
+ "nix 0.29.0",
+ "num_cpus",
+ "once_cell",
+ "pkg-config",
+ "serde",
+ "thiserror 1.0.69",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

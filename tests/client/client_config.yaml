@@ -42,16 +42,17 @@ servers:
           - "tun-threaded=1" # Use split facilities: separate ingress/egress threads (1 each) instead of a single shared thread.
           - "tunnel-ingress-sa-bufsize=2048" # SA = StorageArea = Buffer to collect INCOMING inside packets; in bytes.
                                              # defining `=auto` will constrain storage areas based on the tunnel MTU.
-          - "tunnel-ingress-sa-count=4" # How many SA per client. More SA = more simultaneous packet blocks before backpressure, but more memory
+          - "tunnel-ingress-sa-count=2" # How many SA per client. More SA = more simultaneous packet blocks before backpressure, but more memory
           - "tunnel-ingress-max-ob-size=131072" # = Total memory to allow for PacketCollector 
                                                 # (part of Axl IngressChain which is after the memtun device per client)
-          - "tunnel-ingress-coll-count=2" # Concurrent collection pipelines. Minimum requirement is 2.
+          - "tunnel-ingress-coll-count=4" # Concurrent collection pipelines. Minimum requirement is 2.
                                           # Note: A Collection in Axl is a data structure that batches multiple network packet payloads into a single submission unit for more efficient processing through the packet engine.
           - "rx-aggregator-inact-evict-ms=1000" # Time without new packets on a block before said block is "evicted",
                                                 # Evicted = Axl Aggregator stops retrying decoding, eventually releasing the symbol table sooner.
                                                 # Shorter values = More risk giving up on late repair packets, not decoding them, but less memory use
           - "rx-aggregator-inact-forget-ms=2000" # After "evicted", the block is still tracked for this amount of time to ignore duplicates.
                                                 # Shorter vaues = More risk of late duplicates appearing, but less memory use.
+          - "rx-flow-counters-ring-buffer-size=1024" 
           - "encoder-mem-limit=268435456" # 256 MB
           - "encoder-backlog-limit=4" # Default = 2
           - "cb-accum-memblock-size=131072" # 128 * 1024 = 128 KiB

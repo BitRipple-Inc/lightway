@@ -47,6 +47,7 @@ inside_pkt_codec:
                                             # Shorter values = More risk giving up on late repair packets, not decoding them, but less memory use
       - "rx-aggregator-inact-forget-ms=2000" # After "evicted", the block is still tracked for this amount of time to ignore duplicates.
                                             # Shorter vaues = More risk of late duplicates appearing, but less memory use.
+      - "rx-flow-counters-ring-buffer-size=1024"
       - "encoder-mem-limit=268435456" # 256 MB
       - "encoder-backlog-limit=4" # Default = 2
       - "cb-accum-memblock-size=131072" # 128 * 1024 = 128 KiB
