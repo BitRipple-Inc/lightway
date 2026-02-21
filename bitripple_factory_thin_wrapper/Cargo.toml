@@ -1,6 +1,6 @@
 [package]
 name = "bitripple_factory_thin_wrapper"
-version = "1.0.9"
+version = "1.0.10"
 edition.workspace = true
 publish = false
 
@@ -12,7 +12,7 @@ bytes.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 nix = { version = "0.29.0", features = ["poll", "socket", "fs"] }
-lightway_bitripple_plugin = { git = "ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git", tag = "v1.0.9"}
+lightway_bitripple_plugin = { git = "ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git", tag = "v1.0.10"}
 
 [dev-dependencies]
 rand = "0.9.0"
