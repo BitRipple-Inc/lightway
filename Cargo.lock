@@ -248,7 +248,7 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 
 [[package]]
 name = "bitripple_factory_thin_wrapper"
-version = "1.0.7"
+version = "1.0.10"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1760,7 +1760,7 @@ dependencies = [
 
 [[package]]
 name = "lt3_plugin"
-version = "1.0.10"
+version = "1.0.11"
 dependencies = [
  "bindgen",
  "bytes",
