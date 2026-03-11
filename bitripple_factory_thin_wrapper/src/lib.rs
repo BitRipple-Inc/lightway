@@ -30,7 +30,7 @@ impl BitRippleCodecFactory {
 ///
 /// Returns `true` only on the first process-wide transition.
 pub fn mark_bitripple_service_shutdown_started() -> bool {
-  lt3_plugin::mark_service_shutdown_started()
+  lightway_bitripple_plugin::mark_service_shutdown_started()
 }
 
 struct EncoderWrapper {
