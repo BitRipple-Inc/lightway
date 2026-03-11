@@ -23,6 +23,16 @@ impl BitRippleCodecFactory {
   }
 }
 
+/// Signals that host application has started graceful service shutdown.
+///
+/// The BitRipple plugin uses this signal to switch teardown policy from strict
+/// runtime behavior to shutdown-bounded behavior where configured.
+///
+/// Returns `true` only on the first process-wide transition.
+pub fn mark_bitripple_service_shutdown_started() -> bool {
+  lt3_plugin::mark_service_shutdown_started()
+}
+
 struct EncoderWrapper {
   inner: PacketEncoderType,
 }

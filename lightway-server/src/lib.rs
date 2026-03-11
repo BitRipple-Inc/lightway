@@ -16,6 +16,7 @@ pub use lightway_core::{
 };
 
 use anyhow::{Context, Result, anyhow};
+use bitripple_factory_thin_wrapper::mark_bitripple_service_shutdown_started;
 use ipnet::Ipv4Net;
 use lightway_app_utils::{PacketCodecFactoryType, TunConfig, connection_ticker_cb};
 use lightway_core::{
@@ -387,6 +388,9 @@ pub async fn server<SA: for<'a> ServerAuth<AuthState<'a>> + Sync + Send + 'stati
         io = inside_io_loop =>  io.map_err(|e| anyhow!(e).context("Inside IO loop panicked"))?.context("Inside IO loop exited"),
         _ = ctrlc_rx => {
             info!("Sigterm or Sigint received");
+            // Notify BitRipple runtime before disconnecting clients so teardown can
+            // switch into shutdown-bounded behavior.
+            let _ = mark_bitripple_service_shutdown_started();
             conn_manager.close_all_connections();
             Ok(())
         }
