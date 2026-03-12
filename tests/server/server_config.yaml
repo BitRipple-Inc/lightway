@@ -65,4 +65,6 @@ inside_pkt_codec:
     codec_idle_reclaimer_enabled: true
     codec_idle_teardown_ms: 10000
     codec_idle_check_ms: 5000
+    shutdown_dispose_budget_ms: 1000
+    shutdown_fast_mode: true
     logging: off
