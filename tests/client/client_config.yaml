@@ -37,7 +37,10 @@ servers:
       tunnel_args:
         config_item:
           - "log-filter=~30" # Axl logging filter
-          - "fb-engine-block-abandon-time-ms-auto=0" # Disable RTT-based auto tuning of block abandon time; rely on the static values instead.
+          - "fb-engine-block-abandon-time-ms-auto=1" # value = 1 enables RTT-based auto tuning of block abandon time; rely on the static values instead.
+          - "fb-engine-block-abandon-time-ms=50" # max time the system will keep a block pending feedback/repair before it abandon it
+                                                 # when enabling auto abandon time algorithm (fb-engine-block-abandon-time-ms-auto=1), this is just
+                                                 # used as a fallback
           - "thread-pool-worker-count=4" # Number of Axl worker threads to parallelize codec processing.
           - "tun-threaded=1" # Use split facilities: separate ingress/egress threads (1 each) instead of a single shared thread.
           - "tunnel-ingress-sa-bufsize=2048" # SA = StorageArea = Buffer to collect INCOMING inside packets; in bytes.
