@@ -156,6 +156,11 @@ async fn main() -> Result<()> {
     tun_config.tun_name(tun_name);
   }
 
+  #[cfg(windows)]
+  if let Some(wintun_file) = config.wintun_file {
+    tun_config.wintun_file(wintun_file);
+  }
+
   // TODO: Fix in future PR
   tun_config
     .mtu(1350)
@@ -171,17 +176,7 @@ async fn main() -> Result<()> {
     }
   })?;
 
-  #[cfg(windows)]
-  if let Some(wintun_file) = config.wintun_file {
-    tun_config.wintun_file(wintun_file);
-  }
-
-  // TODO: Fix in future PR
-  tun_config
-    .mtu(1350)
-    .address(config.tun_local_ip.into())
-    .destination(config.tun_peer_ip)
-    .up();
+  let inside_io: Option<Arc<dyn InsideIO<()>>> = None;
 
   let servers = if config.servers.is_empty() {
     vec![ConnectionConfig {
@@ -211,7 +206,20 @@ async fn main() -> Result<()> {
       }
   };
 
-  let (_, encoding_request_rx) = tokio::sync::mpsc::channel::<bool>(1);
+  let needs_inside_pkt_codec = servers
+    .iter()
+    .any(|server| server.inside_pkt_codec.is_some());
+
+  let inside_pkt_codec_config = if needs_inside_pkt_codec {
+    let (_, encoding_request_rx) = tokio::sync::mpsc::channel::<bool>(1);
+    Some(ClientInsidePacketCodecConfig {
+      enable_encoding_at_connect: config.enable_inside_pkt_encoding_at_connect,
+      encoding_request_signal: encoding_request_rx,
+    })
+  } else {
+    None
+  };
+
   let config = ClientConfig {
     auth,
     root_ca_cert,
@@ -243,10 +251,7 @@ async fn main() -> Result<()> {
     iouring_entry_count: config.iouring_entry_count,
     #[cfg(feature = "io-uring")]
     iouring_sqpoll_idle_time: config.iouring_sqpoll_idle_time.into(),
-    inside_pkt_codec_config: Some(ClientInsidePacketCodecConfig {
-      enable_encoding_at_connect: true,
-      encoding_request_signal: encoding_request_rx,
-    }),
+    inside_pkt_codec_config,
     stop_signal: ctrlc_rx,
     network_change_signal: None,
     best_connection_selected_signal: None,
