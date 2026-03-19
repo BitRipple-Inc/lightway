@@ -33,6 +33,7 @@ inside_pkt_codec:
     config_item:
       - "log-filter=~30" # Axl logging filter
       - "fb-engine-block-abandon-time-ms-auto=1" # value = 1 enables RTT-based auto tuning of block abandon time; rely on the static values instead.
+      - "fb-engine-block-abandon-time-ms-auto-min=10" # Minimum block abandon time when RTT-based auto tuning is enabled.
       - "fb-engine-block-abandon-time-ms=50" # max time the system will keep a block pending feedback/repair before it abandon it 
                                              # when enabling auto abandon time algorithm (fb-engine-block-abandon-time-ms-auto=1), this is just
                                              # used as a fallback
