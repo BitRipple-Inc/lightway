@@ -1676,7 +1676,7 @@ dependencies = [
 
 [[package]]
 name = "lt3_plugin"
-version = "1.0.12"
+version = "1.0.14"
 dependencies = [
  "bindgen",
  "bytes",
