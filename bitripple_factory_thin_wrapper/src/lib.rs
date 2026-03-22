@@ -2,13 +2,13 @@ use bytes::BytesMut;
 use lightway_app_utils::{
   PacketCodec as LWPacketCodec, PacketCodecFactory as LWPacketCodecFactory,
 };
-pub use lightway_bitripple_plugin::config::TunnelArgs;
-use lightway_bitripple_plugin::codec::PacketCodecFactory as BrPacketCodecFactory;
-use lightway_bitripple_plugin::codec::{
+use lightway_core::{CodecStatus, PacketCodecResult, PacketDecoder, PacketEncoder};
+use lt3_plugin::codec::PacketCodecFactory as BrPacketCodecFactory;
+use lt3_plugin::codec::{
   BitRippleCodecFactory as InnerFactory, CodecStatus as BrCodecStatus,
   PacketCodec as BRPacketCodec, PacketDecoderType, PacketEncoderType,
 };
-use lightway_core::{CodecStatus, PacketCodecResult, PacketDecoder, PacketEncoder};
+pub use lt3_plugin::config::TunnelArgs;
 use std::sync::Arc;
 
 /// Wrapper that adapts `BitRippleCodecFactory` to the Lightway `PacketCodecFactory` trait.

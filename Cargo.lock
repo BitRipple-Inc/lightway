@@ -259,7 +259,7 @@ checksum = "843867be96c8daad0d758b57df9392b6d8d271134fce549de6ce169ff98a92af"
 
 [[package]]
 name = "bitripple_factory_thin_wrapper"
-version = "1.0.12"
+version = "1.0.14"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1677,6 +1677,7 @@ dependencies = [
 [[package]]
 name = "lt3_plugin"
 version = "1.0.14"
+source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?tag=v1.0.14#fdf5c5dec3e30b7f3ebfae83b3c8806e041f7bca"
 dependencies = [
  "bindgen",
  "bytes",
