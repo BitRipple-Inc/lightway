@@ -126,6 +126,22 @@ try {
 
     $Artifact = Join-Path $LightwayDir "target\$Target\release\lightway-client.exe"
     Write-Host "`nBuild complete: $Artifact"
+    Write-Host ""
+    Write-Host "RUNTIME REQUIREMENT: wintun.dll" -ForegroundColor Yellow
+    Write-Host "  lightway-client.exe uses tun-rs to create a virtual TUN adapter on Windows."
+    Write-Host "  tun-rs loads wintun.dll dynamically at runtime -- it cannot be statically linked."
+    Write-Host "  Without it the client will fail immediately with: LoadLibraryExW failed (os error 126)"
+    Write-Host ""
+    Write-Host "  To install wintun.dll:"
+    Write-Host "    1. Download the Wintun zip from https://wintun.net/"
+    Write-Host "    2. Extract the zip -- it contains binaries for amd64, arm64, x86, arm"
+    Write-Host "    3. Copy the correct wintun.dll next to lightway-client.exe:"
+    if ($Arch -eq "arm64") {
+        Write-Host "         arm64\wintun.dll  ->  $(Split-Path $Artifact)"
+    } else {
+        Write-Host "         amd64\wintun.dll  ->  $(Split-Path $Artifact)"
+    }
+    Write-Host "    4. Run lightway-client.exe as Administrator (required to create TUN adapters)"
 } finally {
     Pop-Location
 }
