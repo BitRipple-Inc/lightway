@@ -35,7 +35,7 @@ use crate::route_manager::{RouteManager, RouteMode};
 use lightway_app_utils::wolfssl_tracing_callback;
 pub use lightway_core::{
     AuthMethod, MAX_INSIDE_MTU, MAX_OUTSIDE_MTU, PluginFactoryError, PluginFactoryList,
-    RootCertificate, Version,
+    RootCertificate, SslVerifyMode, Version,
 };
 #[cfg(feature = "debug")]
 // re-export so client app does not need to depend on lightway-core
@@ -90,6 +90,9 @@ pub struct ClientConfig<'cert, ExtAppState: Send + Sync> {
     /// CA certificate
     #[educe(Debug(ignore))]
     pub root_ca_cert: RootCertificate<'cert>,
+
+    /// TLS certificate verification mode
+    pub verify_mode: SslVerifyMode,
 
     /// Outside (wire) MTU
     pub outside_mtu: usize,
@@ -721,6 +724,7 @@ pub async fn connect<
     let conn_builder = ClientContextBuilder::new(
         connection_type,
         config.root_ca_cert,
+        config.verify_mode,
         None,
         Arc::new(ClientIpConfigCb),
         connection_ticker_cb,

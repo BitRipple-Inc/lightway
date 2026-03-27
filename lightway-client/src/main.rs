@@ -150,6 +150,13 @@ async fn main() -> Result<()> {
     RootCertificate::PemFileOrDirectory(&root_ca_path)
   };
 
+  let verify_mode = if config.skip_cert_verify {
+    tracing::warn!("TLS certificate verification is DISABLED -- do not use in production");
+    SslVerifyMode::SslVerifyNone
+  } else {
+    SslVerifyMode::SslVerifyPeer
+  };
+
   let mut tun_config = TunConfig::default();
 
   if let Some(tun_name) = config.tun_name {
@@ -223,6 +230,7 @@ async fn main() -> Result<()> {
   let config = ClientConfig {
     auth,
     root_ca_cert,
+    verify_mode,
     outside_mtu: config.outside_mtu,
     inside_io,
     tun_config,

@@ -19,7 +19,7 @@ mod version;
 mod wire;
 
 // Reexport wolfssl types
-pub use wolfssl::{IOCallbackResult, ProtocolVersion, RootCertificate, Secret};
+pub use wolfssl::{IOCallbackResult, ProtocolVersion, RootCertificate, Secret, SslVerifyMode};
 
 // Re-export wolfssl in case applications need it
 pub use wolfssl;

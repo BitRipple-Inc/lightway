@@ -64,6 +64,10 @@ pub struct Config {
     #[clap(long, default_value = "./ca_cert.crt")]
     pub ca_cert: String,
 
+    /// Disable TLS certificate verification (INSECURE: for local testing only)
+    #[clap(long, default_value_t = false)]
+    pub skip_cert_verify: bool,
+
     /// Outside (wire) MTU
     #[clap(long, default_value_t = MAX_OUTSIDE_MTU)]
     pub outside_mtu: usize,

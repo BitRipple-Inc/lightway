@@ -6,14 +6,14 @@ use std::sync::{Arc, Mutex};
 use thiserror::Error;
 
 use crate::{
-    BuilderPredicates, Cipher, ClientConnectionBuilder, ConnectionBuilderError, ExpresslaneCbType,
-    InsideIOSendCallbackArg, OutsideIOSendCallbackArg, OutsidePacket, PluginResult,
-    RootCertificate, Secret, ServerConnectionBuilder, ServerIpPoolArg, Version,
     context::ip_pool::ClientIpConfigArg,
     packet::OutsidePacketError,
     plugin::{PluginFactoryError, PluginFactoryList, PluginList},
     version::VersionRangeInclusive,
     wire::{self, ExpresslaneConfig},
+    BuilderPredicates, Cipher, ClientConnectionBuilder, ConnectionBuilderError, ExpresslaneCbType,
+    InsideIOSendCallbackArg, OutsideIOSendCallbackArg, OutsidePacket, PluginResult,
+    RootCertificate, Secret, ServerConnectionBuilder, ServerIpPoolArg, SslVerifyMode, Version,
 };
 pub use server_auth::{ServerAuth, ServerAuthArg, ServerAuthHandle, ServerAuthResult};
 
@@ -153,6 +153,7 @@ impl<AppState> ClientContextBuilder<AppState> {
     pub fn new(
         connection_type: ConnectionType,
         root_ca: RootCertificate,
+        verify_mode: SslVerifyMode,
         inside_io: Option<InsideIOSendCallbackArg<AppState>>,
         ip_config: ClientIpConfigArg<AppState>,
         schedule_tick_cb: ScheduleTickCb<AppState>,
@@ -164,6 +165,7 @@ impl<AppState> ClientContextBuilder<AppState> {
 
         let wolfssl = wolfssl::ContextBuilder::new(protocol)?
             .with_root_certificate(root_ca)?
+            .with_verify_method(verify_mode)
             .with_cipher_list(Cipher::default().as_cipher_list(connection_type))?;
 
         Ok(Self {
