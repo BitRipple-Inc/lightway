@@ -266,7 +266,6 @@ dependencies = [
  "lightway-app-utils",
  "lightway-core",
  "lt3_plugin",
- "nix 0.29.0",
  "rand 0.9.2",
  "thiserror 2.0.18",
  "tokio",
@@ -1677,6 +1676,7 @@ dependencies = [
 [[package]]
 name = "lt3_plugin"
 version = "1.0.14"
+source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?branch=windows-support#74e91f55f0238b7419ba4ec65d7bac3d452dee1b"
 dependencies = [
  "bindgen",
  "bytes",
@@ -1912,7 +1912,6 @@ dependencies = [
  "cfg-if",
  "cfg_aliases",
  "libc",
- "memoffset",
 ]
 
 [[package]]
