@@ -1676,7 +1676,7 @@ dependencies = [
 [[package]]
 name = "lt3_plugin"
 version = "1.0.14"
-source = "git+ssh://git@github.com/BitRipple-Inc/lightway_bitripple_plugin.git?branch=windows-support#74e91f55f0238b7419ba4ec65d7bac3d452dee1b"
+source = "git+https://github.com/BitRipple-Inc/lightway_bitripple_plugin.git?branch=windows-support#74e91f55f0238b7419ba4ec65d7bac3d452dee1b"
 dependencies = [
  "bindgen",
  "bytes",
