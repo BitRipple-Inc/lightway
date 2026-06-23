@@ -41,10 +41,10 @@ inside_pkt_codec:
       - "tun-threaded=1" # Use split facilities: separate ingress/egress threads (1 each) instead of a single shared thread.
       - "tunnel-ingress-sa-bufsize=2048" # SA = StorageArea = Buffer to collect INCOMING inside packets; in bytes.
                                           # defining `=auto` will constrain storage areas based on the tunnel MTU.
-      - "tunnel-ingress-sa-count=4" # How many SA per client. More SA = more simultaneous packet blocks before backpressure, but more memory
+      - "tunnel-ingress-sa-count=8" # How many SA per client. More SA = more simultaneous packet blocks before backpressure, but more memory
       - "tunnel-ingress-max-ob-size=131072" # = Total memory to allow for PacketCollector 
                                             # (part of Axl IngressChain which is after the memtun device per client)
-      - "tunnel-ingress-coll-count=2" # Concurrent collection pipelines. Minimum requirement is 2.
+      - "tunnel-ingress-coll-count=8" # Concurrent collection pipelines. Minimum requirement is 2.
                                       # Note: A Collection in Axl is a data structure that batches multiple network packet payloads into a single submission unit for more efficient processing through the packet engine.
       - "rx-aggregator-inact-evict-ms=1000" # Time without new packets on a block before said block is "evicted",
                                             # Evicted = Axl Aggregator stops retrying decoding, eventually releasing the symbol table sooner.
@@ -62,12 +62,11 @@ inside_pkt_codec:
       - "fb-engine-pover=0.1" # Feedback repair method linear term; scales repair count with block size (c * k).
       - "fb-engine-sqfactor=0" # Feedback repair method square-root term; adds repair proportional to sqrt(block size).
       - "fb-engine-nadd=0" # Feedback repair method constant term; fixed extra repair packets per block.
-    channel_mode: "Unbounded"
     encoder_backlog_capacity: 128
     inject_batch_budget: 16
     egress_batch_budget: 16
     codec_idle_reclaimer_enabled: true
-    codec_idle_teardown_ms: 10000
+    codec_idle_teardown_ms: 150000
     codec_idle_check_ms: 5000
     shutdown_dispose_budget_ms: 1000
     shutdown_fast_mode: true
