@@ -55,13 +55,19 @@ inside_pkt_codec:
       - "encoder-mem-limit=268435456" # 256 MB
       - "encoder-backlog-limit=4" # Default = 2
       - "cb-accum-memblock-size=131072" # 128 * 1024 = 128 KiB
-      - "tunnel-block-timeout-ms=5" # Time window (ms) to keep collecting packets into a block when there is no backpressure.
-      - "tunnel-block-inactivity-timeout-ms=1" # Maximum collect time (ms) without new packets before finalizing a block early.
+      - "tunnel-block-timeout-ms=20" # Maximum collection window (ms) before finalizing a block.
+      - "tunnel-block-inactivity-timeout-ms=10" # Finalize early after this many ms without a new packet.
       - "fb-packet-size=1280" # Maximum size for feedback packets; larger feedback is split across multiple packets.
       - "packet-payload-size=1280" # Maximum payload bytes per data packet emitted by the encoder.
+      - "packet-size-method=0" # Always use packet-payload-size instead of deriving a smaller symbol size per block.
       - "fb-engine-pover=0.1" # Feedback repair method linear term; scales repair count with block size (c * k).
       - "fb-engine-sqfactor=0" # Feedback repair method square-root term; adds repair proportional to sqrt(block size).
       - "fb-engine-nadd=0" # Feedback repair method constant term; fixed extra repair packets per block.
+      - "min-repair-packets=1" # Keep a one-packet minimum repair floor.
+      - "rx-fb-engine-backoff-levels=7" # Send up to seven feedback updates for an unchanged block.
+      - "rx-fb-engine-backoff-duration-us=125000" # Space unchanged-block feedback exponentially from a 125 ms base interval.
+      - "tx-flow-set-packet-checksums=1" # Add Axl's per-packet payload checksum on transmit.
+      - "rx-flow-verify-packet-checksums=1" # Verify the matching Axl payload checksum on receive.
     encoder_backlog_capacity: 128
     inject_batch_budget: 16
     egress_batch_budget: 16
