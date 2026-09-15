@@ -1671,7 +1671,7 @@ dependencies = [
 [[package]]
 name = "lt3_plugin"
 version = "1.0.18"
-source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?tag=v1.0.18#676347179a1cce68bc64e63b90b3ebad87304ab3"
+source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?tag=v1.0.18#b7339c17ead1f4dfc4f6d775c3b26e4266f783ae"
 dependencies = [
  "bindgen",
  "bytes",
