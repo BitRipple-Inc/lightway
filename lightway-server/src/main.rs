@@ -1,16 +1,27 @@
 mod auth;
 
 use anyhow::{Context, Result};
+use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs};
 
 use metrics_util::debugging::DebuggingRecorder;
 use tokio_stream::StreamExt;
 use tracing::{error, trace};
 
-use lightway_app_utils::{Validate, validate_configuration_file_path};
+use lightway_app_utils::{PacketCodecFactoryType, Validate, validate_configuration_file_path};
 #[cfg(feature = "debug")]
 use lightway_core::set_logging_callback;
-use lightway_server::config::Config;
+use lightway_server::config::{CodecConfig, Config};
 use lightway_server::*;
+
+fn create_codec_factory(config: CodecConfig) -> Result<PacketCodecFactoryType> {
+    match config {
+        CodecConfig::Lt3 { tunnel_args } => {
+            let tunnel_args: TunnelArgs = serde_json::from_value(tunnel_args)
+                .context("invalid LT3 tunnel_args configuration")?;
+            Ok(Box::new(BitRippleCodecFactory::new(tunnel_args)))
+        }
+    }
+}
 
 async fn metrics_debug() {
     if !tracing::enabled!(tracing::Level::TRACE) {
@@ -70,7 +81,7 @@ async fn metrics_debug() {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    let (config, startup_logs) = Config::load().await?;
+    let (mut config, startup_logs) = Config::load().await?;
 
     validate_configuration_file_path(&config.server_key, Validate::OwnerOnly)
         .with_context(|| format!("Invalid server key file {}", config.server_key.display()))?;
@@ -103,13 +114,19 @@ async fn main() -> Result<()> {
         tracing::debug!("{log}");
     }
 
-    let server_config = crate::ServerConfig::try_from_auth_and_config(
+    let inside_pkt_codec = config
+        .inside_pkt_codec
+        .take()
+        .map(create_codec_factory)
+        .transpose()?;
+    let mut server_config = crate::ServerConfig::try_from_auth_and_config(
         crate::auth::Auth::new(
             config.user_db.as_ref().map(AsRef::as_ref),
             config.token_rsa_pub_key_pem.as_ref().map(AsRef::as_ref),
         )?,
         config,
     )?;
+    server_config.inside_pkt_codec = inside_pkt_codec;
 
     tokio::spawn(metrics_debug());
 
