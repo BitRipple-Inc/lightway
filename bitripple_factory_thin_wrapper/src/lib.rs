@@ -7,9 +7,14 @@ use lightway_app_utils::{
 use lightway_core::{CodecStatus, PacketCodecResult, PacketDecoder, PacketEncoder};
 use lt3_plugin::codec::PacketCodecFactory as Lt3PacketCodecFactory;
 use lt3_plugin::codec::{
-    BitRippleCodecFactory as InnerFactory, CodecStatus as Lt3CodecStatus,
-    PacketCodec as Lt3PacketCodec, PacketDecoderType, PacketEncoderType,
+    BitRippleCodecFactory as InnerFactory, CodecStatus as Lt3CodecStatus, NetworkQuality,
+    NetworkQualityHandle, NetworkQualitySnapshot, PacketCodec as Lt3PacketCodec, PacketDecoderType,
+    PacketEncoderType,
 };
+use serde::Serialize;
+
+/// Version of the LT3 statistics object emitted through Lightway's opaque codec hook.
+const CODEC_STATISTICS_SCHEMA_VERSION: u8 = 1;
 
 pub use lt3_plugin::config::TunnelArgs;
 
@@ -32,6 +37,30 @@ struct EncoderWrapper {
 
 struct DecoderWrapper {
     inner: PacketDecoderType,
+    network_quality: NetworkQualityHandle,
+}
+
+/// Stable, application-facing LT3 payload carried by Lightway's opaque statistics string.
+#[derive(Serialize)]
+struct DecoderStatistics {
+    schema_version: u8,
+    lt3_off: NetworkQuality,
+    lt3_on: NetworkQuality,
+}
+
+impl From<NetworkQualitySnapshot> for DecoderStatistics {
+    fn from(snapshot: NetworkQualitySnapshot) -> Self {
+        Self {
+            schema_version: CODEC_STATISTICS_SCHEMA_VERSION,
+            lt3_off: snapshot.lt3_off,
+            lt3_on: snapshot.lt3_on,
+        }
+    }
+}
+
+/// Serializes one simplified LT3 quality snapshot for Lightway's opaque statistics channel.
+fn serialize_network_quality(snapshot: NetworkQualitySnapshot) -> Option<String> {
+    serde_json::to_string(&DecoderStatistics::from(snapshot)).ok()
 }
 
 impl PacketEncoder for EncoderWrapper {
@@ -58,6 +87,10 @@ impl PacketDecoder for DecoderWrapper {
             Lt3CodecStatus::SkipPacket => Ok(CodecStatus::SkipPacket),
         }
     }
+
+    fn stats(&self) -> Option<String> {
+        serialize_network_quality(self.network_quality.snapshot())
+    }
 }
 
 impl LightwayPacketCodecFactory for BitRippleCodecFactory {
@@ -69,6 +102,7 @@ impl LightwayPacketCodecFactory for BitRippleCodecFactory {
             }),
             decoder: Arc::new(DecoderWrapper {
                 inner: codec.decoder,
+                network_quality: codec.network_quality,
             }),
             encoded_pkt_receiver: codec.encoded_pkt_receiver,
             decoded_pkt_receiver: codec.decoded_pkt_receiver,
@@ -81,5 +115,23 @@ impl LightwayPacketCodecFactory for BitRippleCodecFactory {
 
     fn shutdown(&self) {
         self.inner.shutdown()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn network_quality_uses_the_versioned_lt3_on_off_schema() {
+        let snapshot = NetworkQualitySnapshot {
+            lt3_off: NetworkQuality::Poor,
+            lt3_on: NetworkQuality::Excellent,
+        };
+
+        assert_eq!(
+            serialize_network_quality(snapshot).as_deref(),
+            Some(r#"{"schema_version":1,"lt3_off":"poor","lt3_on":"excellent"}"#)
+        );
     }
 }

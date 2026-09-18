@@ -419,6 +419,8 @@ dependencies = [
  "lightway-app-utils",
  "lightway-core",
  "lt3_plugin",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2187,8 +2189,8 @@ dependencies = [
 
 [[package]]
 name = "lt3_plugin"
-version = "1.0.18"
-source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?tag=v1.0.18#b7339c17ead1f4dfc4f6d775c3b26e4266f783ae"
+version = "1.0.16"
+source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?rev=1fa8eeb2a8408b96b9d5ad48e724940c6e13a405#1fa8eeb2a8408b96b9d5ad48e724940c6e13a405"
 dependencies = [
  "bindgen",
  "bytes",

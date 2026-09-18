@@ -157,6 +157,7 @@ async fn main() -> Result<()> {
         .iter()
         .any(|server| server.inside_pkt_codec.is_some());
     let enable_inside_pkt_encoding = config.enable_inside_pkt_encoding;
+    let inside_pkt_codec_stats_interval = config.inside_pkt_codec_stats_interval.into();
 
     let mut client_config = lightway_client::ClientConfig::<()>::try_from_reload_sig_and_config(
         config_reload_signal,
@@ -169,6 +170,7 @@ async fn main() -> Result<()> {
             enable_inside_pkt_encoding,
             encoding_request_signal,
         });
+        client_config.inside_pkt_codec_stats_interval = inside_pkt_codec_stats_interval;
     }
 
     let conn_confs = join_all(servers.into_iter().map(make_client_connection_config));
