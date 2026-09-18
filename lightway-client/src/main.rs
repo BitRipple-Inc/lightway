@@ -5,14 +5,15 @@ use futures::future::join_all;
 use lightway_core::{Event, EventCallback};
 use tokio::sync::mpsc;
 
+use bitripple_factory_thin_wrapper::{BitRippleCodecFactory, TunnelArgs};
 use lightway_app_utils::{
-    Validate,
+    PacketCodecFactoryType, Validate,
     args::{ConfigFormat, LogFormat},
     validate_configuration_file_path,
 };
 use lightway_client::*;
 
-use lightway_client::config::Config;
+use lightway_client::config::{CodecConfig, Config, ConnectionConfig};
 
 struct EventHandler;
 
@@ -28,6 +29,34 @@ impl EventCallback for EventHandler {
             _ => {}
         }
     }
+}
+
+fn create_codec_factory(config: CodecConfig) -> Result<PacketCodecFactoryType> {
+    match config {
+        CodecConfig::Lt3 { tunnel_args } => {
+            let tunnel_args: TunnelArgs = serde_json::from_value(tunnel_args)
+                .context("invalid LT3 tunnel_args configuration")?;
+            Ok(Box::new(BitRippleCodecFactory::new(tunnel_args)))
+        }
+    }
+}
+
+async fn make_client_connection_config(
+    mut config: ConnectionConfig,
+) -> Result<ClientConnectionConfig<EventHandler>> {
+    let inside_pkt_codec = config
+        .inside_pkt_codec
+        .take()
+        .map(create_codec_factory)
+        .transpose()?;
+    let mut connection_config =
+        ClientConnectionConfig::try_from_event_handler_and_connection_config(
+            Some(EventHandler),
+            config,
+        )
+        .await?;
+    connection_config.inside_pkt_codec = inside_pkt_codec;
+    Ok(connection_config)
 }
 
 fn generate_config(format: ConfigFormat, config_file: &PathBuf) -> Result<()> {
@@ -124,15 +153,25 @@ async fn main() -> Result<()> {
     let config_reload_signal = spawn_reload_event_handler(&config, config.config_file.clone());
 
     let servers = config.take_servers()?;
+    let needs_inside_pkt_codec = servers
+        .iter()
+        .any(|server| server.inside_pkt_codec.is_some());
+    let enable_inside_pkt_encoding = config.enable_inside_pkt_encoding;
 
-    let client_config = lightway_client::ClientConfig::<()>::try_from_reload_sig_and_config(
+    let mut client_config = lightway_client::ClientConfig::<()>::try_from_reload_sig_and_config(
         config_reload_signal,
         config,
     )?;
 
-    let conn_confs = join_all(servers.into_iter().map(|c| {
-        ClientConnectionConfig::try_from_event_handler_and_connection_config(Some(EventHandler), c)
-    }));
+    if needs_inside_pkt_codec {
+        let (_, encoding_request_signal) = mpsc::channel(1);
+        client_config.inside_pkt_codec_config = Some(ClientInsidePacketCodecConfig {
+            enable_inside_pkt_encoding,
+            encoding_request_signal,
+        });
+    }
+
+    let conn_confs = join_all(servers.into_iter().map(make_client_connection_config));
     let conn_confs = tokio::select! {
         results = conn_confs => {
             results.into_iter()

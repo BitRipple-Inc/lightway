@@ -1,0 +1,14 @@
+[package]
+name = "bitripple_factory_thin_wrapper"
+version = "1.0.18"
+edition.workspace = true
+publish = false
+
+[dependencies]
+bytes.workspace = true
+lightway-app-utils.workspace = true
+lightway-core.workspace = true
+lt3_plugin = { git = "ssh://git@github.com/BitRipple-Inc/lt3_plugin.git", tag = "v1.0.18" }
+
+[lints]
+workspace = true

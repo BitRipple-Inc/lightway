@@ -589,6 +589,18 @@ impl Default for Config {
     }
 }
 
+/// Configuration for a packet codec attached to a Lightway connection.
+#[derive(Clone, Debug, Deserialize, JsonSchema, Serialize, PartialEq)]
+#[serde(tag = "type")]
+pub enum CodecConfig {
+    /// LT3 packet codec.
+    #[serde(rename = "lt3", alias = "bitripple")]
+    Lt3 {
+        /// Opaque LT3 plugin configuration, decoded by the thin wrapper's plugin version.
+        tunnel_args: serde_json::Value,
+    },
+}
+
 #[serde_inline_default::serde_inline_default]
 #[derive(
     Clone, Default, Parser, Debug, Deserialize, JsonSchema, Serialize, PartialEq, Substrate,
@@ -628,6 +640,11 @@ pub struct ConnectionConfig {
     /// The CA Cert content or Path
     #[serde(default)]
     pub ca_cert: Option<String>,
+
+    /// Inside packet codec configuration.
+    #[clap(skip)]
+    #[serde(default)]
+    pub inside_pkt_codec: Option<CodecConfig>,
 }
 
 impl ConnectionConfig {
@@ -814,7 +831,7 @@ mod tests {
     use schemars::SchemaGenerator;
     use test_case::test_case;
 
-    #[test_case("../tests/client/client_config.yaml", true, 0)]
+    #[test_case("../tests/client/client_config.yaml", true, 1)]
     #[test_case(
         "../tests/client/parallel_connect/client_config.tcp_then_udp.yaml",
         false,
@@ -839,6 +856,16 @@ mod tests {
 
         assert_eq!(config.server.is_empty(), !has_top_level_server);
         assert_eq!(config.servers.len(), servers_len);
+    }
+
+    #[test]
+    fn lt3_codec_config_accepts_current_and_legacy_names() {
+        for codec_name in ["lt3", "bitripple"] {
+            let yaml =
+                format!("type: {codec_name}\ntunnel_args:\n  config_profile: stable_defaults\n");
+            let codec: CodecConfig = serde_saphyr::from_str(&yaml).expect("valid LT3 config");
+            assert!(matches!(codec, CodecConfig::Lt3 { .. }));
+        }
     }
 
     fn get_byte_pattern() -> String {
