@@ -23,6 +23,7 @@ anyhow.workspace = true
 async-trait.workspace = true
 bytes.workspace = true
 bytesize.workspace = true
+bitripple_factory_thin_wrapper.workspace = true
 clap.workspace = true
 delegate.workspace = true
 educe.workspace = true
