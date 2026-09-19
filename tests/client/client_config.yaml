@@ -22,6 +22,7 @@ keepalive_continuous: true
 enable_expresslane: false
 enable_pmtud: false
 enable_inside_pkt_encoding: true
+inside_pkt_codec_stats_interval: 1s
 # sndbuf: 1.5 MiB
 # rcvbuf: 1.5 MiB
 route_mode: default

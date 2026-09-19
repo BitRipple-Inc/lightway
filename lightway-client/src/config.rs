@@ -315,6 +315,15 @@ pub struct Config {
     #[schemars(extend("x-cfg" = "desktop"))]
     pub enable_inside_pkt_encoding: bool,
 
+    #[patch(attribute(clap(long)))]
+    #[patch(
+        attribute(doc = r#"Interval between inside packet codec statistics snapshots.
+    A zero duration disables statistics reporting."#)
+    )]
+    #[schemars(schema_with = "lightway_app_utils::args::duration_schema")]
+    /// ex: 5s
+    pub inside_pkt_codec_stats_interval: Duration,
+
     #[cfg(feature = "debug")]
     #[patch(attribute(clap(long)))]
     #[patch(attribute(doc = "File path to save wireshark keylog"))]
@@ -573,6 +582,7 @@ impl Default for Config {
             iouring_entry_count: 1024,
             iouring_sqpoll_idle_time: Duration::from_std_duration(StdDuration::from_millis(100)),
             enable_inside_pkt_encoding: false,
+            inside_pkt_codec_stats_interval: Duration::from_std_duration(StdDuration::ZERO),
             #[cfg(feature = "debug")]
             keylog: None,
             #[cfg(feature = "debug")]
@@ -866,6 +876,17 @@ mod tests {
             let codec: CodecConfig = serde_saphyr::from_str(&yaml).expect("valid LT3 config");
             assert!(matches!(codec, CodecConfig::Lt3 { .. }));
         }
+    }
+
+    #[test]
+    fn codec_statistics_interval_can_be_configured_or_disabled() {
+        let mut config = Config::default();
+        let patch = serde_saphyr::from_str::<ConfigPatch>("inside_pkt_codec_stats_interval: 0s\n")
+            .expect("valid statistics interval");
+
+        config.apply(patch);
+
+        assert!(config.inside_pkt_codec_stats_interval.is_zero());
     }
 
     fn get_byte_pattern() -> String {

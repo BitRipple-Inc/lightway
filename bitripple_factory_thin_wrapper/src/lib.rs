@@ -8,8 +8,13 @@ use lightway_core::{CodecStatus, PacketCodecResult, PacketDecoder, PacketEncoder
 use lt3_plugin::codec::PacketCodecFactory as Lt3PacketCodecFactory;
 use lt3_plugin::codec::{
     BitRippleCodecFactory as InnerFactory, CodecStatus as Lt3CodecStatus,
-    PacketCodec as Lt3PacketCodec, PacketDecoderType, PacketEncoderType,
+    PacketCodec as Lt3PacketCodec, PacketDecoderType, PacketEncoderType, ReceiverMetricsHandle,
+    ReceiverMetricsSnapshot,
 };
+use serde::Serialize;
+
+/// Version of the LT3 statistics object emitted through Lightway's opaque codec hook.
+const CODEC_STATISTICS_SCHEMA_VERSION: u8 = 1;
 
 pub use lt3_plugin::config::TunnelArgs;
 
@@ -32,6 +37,49 @@ struct EncoderWrapper {
 
 struct DecoderWrapper {
     inner: PacketDecoderType,
+    receiver_metrics: ReceiverMetricsHandle,
+}
+
+/// Stable, application-facing LT3 payload carried by Lightway's opaque statistics string.
+#[derive(Serialize)]
+struct DecoderStatistics {
+    schema_version: u8,
+    receiver_side: ReceiverSideStatistics,
+}
+
+/// Receiver-owned statistics. Additional metric families can be added here in a later schema.
+#[derive(Serialize)]
+struct ReceiverSideStatistics {
+    object_recovered: ObjectRecoveryStatistics,
+}
+
+/// Connection-cumulative Axl object outcomes exposed to Lightway applications.
+#[derive(Serialize)]
+struct ObjectRecoveryStatistics {
+    native: u64,
+    recovered: u64,
+    unrecovered: u64,
+}
+
+impl From<ReceiverMetricsSnapshot> for DecoderStatistics {
+    fn from(snapshot: ReceiverMetricsSnapshot) -> Self {
+        let counters = snapshot.object_counters;
+        Self {
+            schema_version: CODEC_STATISTICS_SCHEMA_VERSION,
+            receiver_side: ReceiverSideStatistics {
+                object_recovered: ObjectRecoveryStatistics {
+                    native: counters.native,
+                    recovered: counters.recovered,
+                    unrecovered: counters.unrecovered,
+                },
+            },
+        }
+    }
+}
+
+/// Serializes one simplified receiver snapshot for Lightway's opaque statistics channel.
+fn serialize_receiver_metrics(snapshot: ReceiverMetricsSnapshot) -> Option<String> {
+    serde_json::to_string(&DecoderStatistics::from(snapshot)).ok()
 }
 
 impl PacketEncoder for EncoderWrapper {
@@ -58,6 +106,12 @@ impl PacketDecoder for DecoderWrapper {
             Lt3CodecStatus::SkipPacket => Ok(CodecStatus::SkipPacket),
         }
     }
+
+    fn stats(&self) -> Option<String> {
+        self.receiver_metrics
+            .snapshot()
+            .and_then(serialize_receiver_metrics)
+    }
 }
 
 impl LightwayPacketCodecFactory for BitRippleCodecFactory {
@@ -69,6 +123,7 @@ impl LightwayPacketCodecFactory for BitRippleCodecFactory {
             }),
             decoder: Arc::new(DecoderWrapper {
                 inner: codec.decoder,
+                receiver_metrics: codec.receiver_metrics,
             }),
             encoded_pkt_receiver: codec.encoded_pkt_receiver,
             decoded_pkt_receiver: codec.decoded_pkt_receiver,
@@ -81,5 +136,36 @@ impl LightwayPacketCodecFactory for BitRippleCodecFactory {
 
     fn shutdown(&self) {
         self.inner.shutdown()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn receiver_metrics_use_the_versioned_nested_counter_schema() {
+        let snapshot = ReceiverMetricsSnapshot {
+            object_counters: lt3_plugin::codec::ReceiverObjectCounters {
+                native: 123,
+                recovered: 4,
+                unrecovered: 1,
+            },
+        };
+
+        assert_eq!(
+            serialize_receiver_metrics(snapshot).as_deref(),
+            Some(
+                r#"{"schema_version":1,"receiver_side":{"object_recovered":{"native":123,"recovered":4,"unrecovered":1}}}"#
+            )
+        );
+    }
+
+    #[test]
+    fn decoder_statistics_are_absent_before_the_lazy_axl_graph_is_ready() {
+        let factory = BitRippleCodecFactory::new(TunnelArgs::default());
+        let codec = LightwayPacketCodecFactory::build(&factory);
+
+        assert_eq!(codec.decoder.stats(), None);
     }
 }
