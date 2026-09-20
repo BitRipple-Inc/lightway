@@ -2190,7 +2190,7 @@ dependencies = [
 [[package]]
 name = "lt3_plugin"
 version = "1.0.16"
-source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?rev=11e4b5abb2400d6c0051fb9e39c936e50796b368#11e4b5abb2400d6c0051fb9e39c936e50796b368"
+source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?rev=7b2d8e37c0f31cc98966bc2c6cf9feccb3caf7d1#7b2d8e37c0f31cc98966bc2c6cf9feccb3caf7d1"
 dependencies = [
  "bindgen",
  "bytes",
@@ -4525,7 +4525,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
