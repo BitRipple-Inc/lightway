@@ -1,6 +1,6 @@
 [package]
 name = "bitripple_factory_thin_wrapper"
-version = "1.0.18"
+version = "1.0.19"
 edition.workspace = true
 publish = false
 
@@ -8,7 +8,7 @@ publish = false
 bytes.workspace = true
 lightway-app-utils.workspace = true
 lightway-core.workspace = true
-lt3_plugin = { git = "ssh://git@github.com/BitRipple-Inc/lt3_plugin.git", rev = "49e8b86a1bf06dba898aed2fe2d0a7ee4a65c3d3" }
+lt3_plugin = { git = "ssh://git@github.com/BitRipple-Inc/lt3_plugin.git", rev = "3fc2e60250540e7ebfd77f364a50c5e313b3fabe" }
 serde.workspace = true
 serde_json = "1.0.149"
 

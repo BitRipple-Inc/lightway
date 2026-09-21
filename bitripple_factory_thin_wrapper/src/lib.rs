@@ -40,22 +40,10 @@ struct DecoderWrapper {
     receiver_metrics: ReceiverMetricsHandle,
 }
 
-/// Stable, application-facing LT3 payload carried by Lightway's opaque statistics string.
+/// Stable, application-facing LT3 block counters carried by Lightway's opaque statistics string.
 #[derive(Serialize)]
 struct DecoderStatistics {
     schema_version: u8,
-    receiver_side: ReceiverSideStatistics,
-}
-
-/// Receiver-owned statistics. Additional metric families can be added here in a later schema.
-#[derive(Serialize)]
-struct ReceiverSideStatistics {
-    object_recovered: ObjectRecoveryStatistics,
-}
-
-/// Connection-cumulative Axl object outcomes exposed to Lightway applications.
-#[derive(Serialize)]
-struct ObjectRecoveryStatistics {
     native: u64,
     recovered: u64,
     unrecovered: u64,
@@ -63,16 +51,12 @@ struct ObjectRecoveryStatistics {
 
 impl From<ReceiverMetricsSnapshot> for DecoderStatistics {
     fn from(snapshot: ReceiverMetricsSnapshot) -> Self {
-        let counters = snapshot.object_counters;
+        let counters = snapshot.block_counters;
         Self {
             schema_version: CODEC_STATISTICS_SCHEMA_VERSION,
-            receiver_side: ReceiverSideStatistics {
-                object_recovered: ObjectRecoveryStatistics {
-                    native: counters.native,
-                    recovered: counters.recovered,
-                    unrecovered: counters.unrecovered,
-                },
-            },
+            native: counters.native,
+            recovered: counters.recovered,
+            unrecovered: counters.unrecovered,
         }
     }
 }
@@ -144,9 +128,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn receiver_metrics_use_the_versioned_nested_counter_schema() {
+    fn receiver_metrics_use_the_versioned_flat_block_counter_schema() {
         let snapshot = ReceiverMetricsSnapshot {
-            object_counters: lt3_plugin::codec::ReceiverObjectCounters {
+            block_counters: lt3_plugin::codec::ReceiverBlockCounters {
                 native: 123,
                 recovered: 4,
                 unrecovered: 1,
@@ -155,9 +139,7 @@ mod tests {
 
         assert_eq!(
             serialize_receiver_metrics(snapshot).as_deref(),
-            Some(
-                r#"{"schema_version":1,"receiver_side":{"object_recovered":{"native":123,"recovered":4,"unrecovered":1}}}"#
-            )
+            Some(r#"{"schema_version":1,"native":123,"recovered":4,"unrecovered":1}"#)
         );
     }
 

@@ -318,7 +318,7 @@ pub struct Config {
     #[patch(attribute(clap(long)))]
     #[patch(
         attribute(doc = r#"Interval between inside packet codec statistics snapshots.
-    A zero duration disables statistics reporting."#)
+    Use an interval of at least one second. A zero duration disables statistics reporting."#)
     )]
     #[schemars(schema_with = "lightway_app_utils::args::duration_schema")]
     /// ex: 5s

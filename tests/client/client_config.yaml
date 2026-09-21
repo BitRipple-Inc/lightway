@@ -64,14 +64,14 @@ servers:
           - "min-repair-packets=2"
           - "tx-flow-set-packet-checksums=1"
           - "rx-flow-verify-packet-checksums=1"
-          # Finalize unresolved object-ID gaps after five seconds. Setting this to 0
+          # Finalize unresolved block-ID gaps after five seconds. Setting this to 0
           # disables gap tracking; lt3_plugin then withholds the incomplete receiver
-          # metrics snapshot and Lightway reports an empty decoder statistics object.
+          # metrics snapshot and Lightway omits decoder statistics for that sample.
           - "tunnel-loss-timeout-ms=5000"
           # Check pending gaps once per second. This must remain positive when the
           # loss timeout is positive. It controls observation cadence, not the age threshold.
           - "tunnel-loss-sweep-interval-ms=1000"
-          # Treat a backward object-ID jump larger than this as a sender restart and
+          # Treat a backward block-ID jump larger than this as a sender restart and
           # establish a new baseline instead of counting the intervening range as loss.
           - "tunnel-obid-restart-gap=100000"
         encoder_backlog_capacity: 128
