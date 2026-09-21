@@ -2190,7 +2190,7 @@ dependencies = [
 [[package]]
 name = "lt3_plugin"
 version = "1.0.16"
-source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?rev=7b2d8e37c0f31cc98966bc2c6cf9feccb3caf7d1#7b2d8e37c0f31cc98966bc2c6cf9feccb3caf7d1"
+source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?rev=49e8b86a1bf06dba898aed2fe2d0a7ee4a65c3d3#49e8b86a1bf06dba898aed2fe2d0a7ee4a65c3d3"
 dependencies = [
  "bindgen",
  "bytes",
@@ -3817,7 +3817,7 @@ dependencies = [
  "getrandom 0.3.4",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
