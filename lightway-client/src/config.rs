@@ -841,6 +841,66 @@ mod tests {
     use schemars::SchemaGenerator;
     use test_case::test_case;
 
+    const RELEASE_LT3_CONFIG_ITEMS: [&str; 29] = [
+        "log-filter=~30",
+        "fb-engine-block-abandon-time-ms-auto=1",
+        "fb-engine-block-abandon-time-ms-auto-min=10",
+        "fb-engine-block-abandon-time-ms=50",
+        "thread-pool-worker-count=4",
+        "tun-threaded=1",
+        "tunnel-ingress-sa-bufsize=2048",
+        "tunnel-ingress-sa-count=8",
+        "tunnel-ingress-max-ob-size=131072",
+        "tunnel-ingress-coll-count=8",
+        "rx-aggregator-inact-evict-ms=1000",
+        "rx-aggregator-inact-forget-ms=2000",
+        "encoder-mem-limit=268435456",
+        "rx-flow-counters-ring-buffer-size=1024",
+        "encoder-backlog-limit=4",
+        "cb-accum-memblock-size=131072",
+        "tunnel-block-timeout-ms=5",
+        "tunnel-block-inactivity-timeout-ms=1",
+        "fb-packet-size=1280",
+        "packet-payload-size=1280",
+        "fb-engine-pover=0.1",
+        "fb-engine-sqfactor=0",
+        "fb-engine-nadd=0",
+        "min-repair-packets=2",
+        "tx-flow-set-packet-checksums=1",
+        "rx-flow-verify-packet-checksums=1",
+        "tunnel-loss-timeout-ms=5000",
+        "tunnel-loss-sweep-interval-ms=1000",
+        "tunnel-obid-restart-gap=100000",
+    ];
+
+    fn assert_release_lt3_config(tunnel_args: &serde_json::Value) {
+        let items = tunnel_args
+            .get("config_item")
+            .and_then(serde_json::Value::as_array)
+            .expect("LT3 config_item array");
+        let actual: Vec<_> = items
+            .iter()
+            .map(|item| item.as_str().expect("string LT3 config item"))
+            .collect();
+
+        assert_eq!(actual, RELEASE_LT3_CONFIG_ITEMS);
+        assert_eq!(tunnel_args.get("encoder_backlog_capacity"), Some(&serde_json::json!(128)));
+        assert_eq!(tunnel_args.get("inject_batch_budget"), Some(&serde_json::json!(16)));
+        assert_eq!(tunnel_args.get("egress_batch_budget"), Some(&serde_json::json!(16)));
+        assert_eq!(
+            tunnel_args.get("codec_idle_reclaimer_enabled"),
+            Some(&serde_json::json!(true))
+        );
+        assert_eq!(tunnel_args.get("codec_idle_teardown_ms"), Some(&serde_json::json!(150_000)));
+        assert_eq!(tunnel_args.get("codec_idle_check_ms"), Some(&serde_json::json!(5_000)));
+        assert_eq!(
+            tunnel_args.get("shutdown_dispose_budget_ms"),
+            Some(&serde_json::json!(1_000))
+        );
+        assert_eq!(tunnel_args.get("shutdown_fast_mode"), Some(&serde_json::json!(true)));
+        assert_eq!(tunnel_args.get("logging"), Some(&serde_json::json!(false)));
+    }
+
     #[test_case("../tests/client/client_config.yaml", true, 1)]
     #[test_case(
         "../tests/client/parallel_connect/client_config.tcp_then_udp.yaml",
@@ -876,6 +936,23 @@ mod tests {
             let codec: CodecConfig = serde_saphyr::from_str(&yaml).expect("valid LT3 config");
             assert!(matches!(codec, CodecConfig::Lt3 { .. }));
         }
+    }
+
+    #[test]
+    fn lt3_fixture_pins_the_release_configuration_and_statistics_interval() {
+        let yaml = read_to_string("../tests/client/client_config.yaml").unwrap();
+        let patch = serde_saphyr::from_str::<ConfigPatch>(&yaml).expect("valid client config");
+        let mut config = Config::default();
+        config.apply(patch);
+
+        let CodecConfig::Lt3 { tunnel_args } = config.servers[0]
+            .inside_pkt_codec
+            .as_ref()
+            .expect("LT3 codec fixture");
+        assert_release_lt3_config(tunnel_args);
+
+        let interval: StdDuration = config.inside_pkt_codec_stats_interval.into();
+        assert_eq!(interval, StdDuration::from_secs(1));
     }
 
     #[test]

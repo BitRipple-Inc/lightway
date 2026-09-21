@@ -25,8 +25,53 @@ key_update_interval: 15m
 user_db: "tests/server/lwpasswd"
 udp_buffer_size: 15 MiB
 
-# LT3-on qualification codec. TunnelArgs owns the detailed profile defaults.
+# LT3-on qualification codec with the release configuration stated explicitly.
 inside_pkt_codec:
   type: lt3
   tunnel_args:
-    config_profile: stable_defaults
+    config_item:
+      - "log-filter=~30"
+      - "fb-engine-block-abandon-time-ms-auto=1"
+      - "fb-engine-block-abandon-time-ms-auto-min=10"
+      - "fb-engine-block-abandon-time-ms=50"
+      - "thread-pool-worker-count=4"
+      - "tun-threaded=1"
+      - "tunnel-ingress-sa-bufsize=2048"
+      - "tunnel-ingress-sa-count=8"
+      - "tunnel-ingress-max-ob-size=131072"
+      - "tunnel-ingress-coll-count=8"
+      - "rx-aggregator-inact-evict-ms=1000"
+      - "rx-aggregator-inact-forget-ms=2000"
+      - "encoder-mem-limit=268435456"
+      - "rx-flow-counters-ring-buffer-size=1024"
+      - "encoder-backlog-limit=4"
+      - "cb-accum-memblock-size=131072"
+      - "tunnel-block-timeout-ms=5"
+      - "tunnel-block-inactivity-timeout-ms=1"
+      - "fb-packet-size=1280"
+      - "packet-payload-size=1280"
+      - "fb-engine-pover=0.1"
+      - "fb-engine-sqfactor=0"
+      - "fb-engine-nadd=0"
+      - "min-repair-packets=2"
+      - "tx-flow-set-packet-checksums=1"
+      - "rx-flow-verify-packet-checksums=1"
+      # Finalize unresolved object-ID gaps after five seconds. Setting this to 0
+      # disables gap tracking; lt3_plugin then withholds the incomplete receiver
+      # metrics snapshot and Lightway reports an empty decoder statistics object.
+      - "tunnel-loss-timeout-ms=5000"
+      # Check pending gaps once per second. This must remain positive when the
+      # loss timeout is positive. It controls observation cadence, not the age threshold.
+      - "tunnel-loss-sweep-interval-ms=1000"
+      # Treat a backward object-ID jump larger than this as a sender restart and
+      # establish a new baseline instead of counting the intervening range as loss.
+      - "tunnel-obid-restart-gap=100000"
+    encoder_backlog_capacity: 128
+    inject_batch_budget: 16
+    egress_batch_budget: 16
+    codec_idle_reclaimer_enabled: true
+    codec_idle_teardown_ms: 150000
+    codec_idle_check_ms: 5000
+    shutdown_dispose_budget_ms: 1000
+    shutdown_fast_mode: true
+    logging: off
