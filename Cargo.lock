@@ -2190,7 +2190,7 @@ dependencies = [
 [[package]]
 name = "lt3_plugin"
 version = "1.0.19"
-source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?rev=403e6255600c10b9426bae824524d6ae5a052a5e#403e6255600c10b9426bae824524d6ae5a052a5e"
+source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?rev=dbc0627b275b4f1a91821eab863e827272006d16#dbc0627b275b4f1a91821eab863e827272006d16"
 dependencies = [
  "bindgen",
  "bytes",
