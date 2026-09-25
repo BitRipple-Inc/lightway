@@ -8,7 +8,7 @@ publish = false
 bytes.workspace = true
 lightway-app-utils.workspace = true
 lightway-core.workspace = true
-lt3_plugin = { git = "ssh://git@github.com/BitRipple-Inc/lt3_plugin.git", rev = "3fc2e60250540e7ebfd77f364a50c5e313b3fabe" }
+lt3_plugin = { git = "ssh://git@github.com/BitRipple-Inc/lt3_plugin.git", rev = "403e6255600c10b9426bae824524d6ae5a052a5e" }
 serde.workspace = true
 serde_json = "1.0.149"
 

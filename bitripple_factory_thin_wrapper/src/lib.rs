@@ -44,6 +44,12 @@ struct DecoderWrapper {
 #[derive(Serialize)]
 struct DecoderStatistics {
     schema_version: u8,
+    blocks_recovered: BlockRecoveryCounters,
+}
+
+/// Connection-cumulative outcomes for blocks observed by the LT3 receiver.
+#[derive(Serialize)]
+struct BlockRecoveryCounters {
     native: u64,
     recovered: u64,
     unrecovered: u64,
@@ -54,9 +60,11 @@ impl From<ReceiverMetricsSnapshot> for DecoderStatistics {
         let counters = snapshot.block_counters;
         Self {
             schema_version: CODEC_STATISTICS_SCHEMA_VERSION,
-            native: counters.native,
-            recovered: counters.recovered,
-            unrecovered: counters.unrecovered,
+            blocks_recovered: BlockRecoveryCounters {
+                native: counters.native,
+                recovered: counters.recovered,
+                unrecovered: counters.unrecovered,
+            },
         }
     }
 }
@@ -128,7 +136,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn receiver_metrics_use_the_versioned_flat_block_counter_schema() {
+    fn receiver_metrics_use_the_versioned_nested_block_recovery_schema() {
         let snapshot = ReceiverMetricsSnapshot {
             block_counters: lt3_plugin::codec::ReceiverBlockCounters {
                 native: 123,
@@ -139,7 +147,9 @@ mod tests {
 
         assert_eq!(
             serialize_receiver_metrics(snapshot).as_deref(),
-            Some(r#"{"schema_version":1,"native":123,"recovered":4,"unrecovered":1}"#)
+            Some(
+                r#"{"schema_version":1,"blocks_recovered":{"native":123,"recovered":4,"unrecovered":1}}"#
+            )
         );
     }
 
