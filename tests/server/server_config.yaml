@@ -53,7 +53,7 @@ inside_pkt_codec:
       - "fb-engine-pover=0.1"
       - "fb-engine-sqfactor=0"
       - "fb-engine-nadd=0"
-      - "min-repair-packets=2"
+      - "min-repair-packets=0"
       - "tx-flow-set-packet-checksums=1"
       - "rx-flow-verify-packet-checksums=1"
       # Finalize unresolved block-ID gaps after five seconds. Setting this to 0
