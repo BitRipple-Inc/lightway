@@ -413,7 +413,7 @@ checksum = "3ded4057c258ba199e2d26386d3af3780957ecaee6c4ef4041c6b4b8b97c0b06"
 
 [[package]]
 name = "bitripple_factory_thin_wrapper"
-version = "1.0.19"
+version = "1.0.20"
 dependencies = [
  "bytes",
  "lightway-app-utils",
@@ -2189,8 +2189,8 @@ dependencies = [
 
 [[package]]
 name = "lt3_plugin"
-version = "1.0.19"
-source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?rev=dbc0627b275b4f1a91821eab863e827272006d16#dbc0627b275b4f1a91821eab863e827272006d16"
+version = "1.0.20"
+source = "git+ssh://git@github.com/BitRipple-Inc/lt3_plugin.git?rev=d041679e4bba22930675c5b4fb7d52bb887eb159#d041679e4bba22930675c5b4fb7d52bb887eb159"
 dependencies = [
  "bindgen",
  "bytes",
